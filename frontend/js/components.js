@@ -3,10 +3,10 @@ const Components = {
   // Create navigation bar
   createNavbar(role) {
     const user = Auth.getUser();
-    const userName = user ? user.name : 'User';
-    
-    let navLinks = '';
-    
+    const userName = user ? user.name : "User";
+
+    let navLinks = "";
+
     if (role === ROLES.ADMIN) {
       navLinks = `
         <li class="nav-item"><a class="nav-link" href="/pages/admin/dashboard.html">Dashboard</a></li>
@@ -29,7 +29,7 @@ const Components = {
         <li class="nav-item"><a class="nav-link" href="/pages/student/profile.html">Profile</a></li>
       `;
     }
-    
+
     return `
       <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
@@ -60,7 +60,7 @@ const Components = {
   },
 
   // Create stats card
-  createStatsCard(title, value, icon, color = 'primary') {
+  createStatsCard(title, value, icon, color = "primary") {
     return `
       <div class="col-md-4 mb-4">
         <div class="card border-${color} shadow-sm">
@@ -86,7 +86,9 @@ const Components = {
       <div class="card mb-3 shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">${Utils.escapeHtml(notice.title)}</h5>
-          <span class="badge ${Utils.getNoticeTypeBadgeClass(notice.notice_type)}">
+          <span class="badge ${Utils.getNoticeTypeBadgeClass(
+            notice.notice_type
+          )}">
             ${notice.notice_type}
           </span>
         </div>
@@ -94,11 +96,21 @@ const Components = {
           <p class="card-text">${Utils.escapeHtml(notice.message)}</p>
           <div class="d-flex justify-content-between align-items-center">
             <small class="text-muted">
-              <i class="fas fa-user"></i> ${Utils.escapeHtml(notice.sender_name)} 
-              ${notice.class_name ? `<i class="fas fa-graduation-cap ms-2"></i> ${Utils.escapeHtml(notice.class_name)}` : ''}
+              <i class="fas fa-user"></i> ${Utils.escapeHtml(
+                notice.sender_name
+              )} 
+              ${
+                notice.class_name
+                  ? `<i class="fas fa-graduation-cap ms-2"></i> ${Utils.escapeHtml(
+                      notice.class_name
+                    )}`
+                  : ""
+              }
             </small>
             <small class="text-muted">
-              <i class="fas fa-calendar"></i> ${Utils.formatDate(notice.created_at)}
+              <i class="fas fa-calendar"></i> ${Utils.formatDate(
+                notice.created_at
+              )}
             </small>
           </div>
         </div>
@@ -112,14 +124,20 @@ const Components = {
       <tr>
         <td>${Utils.escapeHtml(user.name)}</td>
         <td>${Utils.escapeHtml(user.email)}</td>
-        <td><span class="badge ${Utils.getRoleBadgeClass(user.role)}">${user.role}</span></td>
-        <td>${user.class_name || '-'}</td>
+        <td><span class="badge ${Utils.getRoleBadgeClass(user.role)}">${
+      user.role
+    }</span></td>
+        <td>${user.class_name || "-"}</td>
         <td>${Utils.formatDate(user.created_at)}</td>
         <td>
-          <button class="btn btn-sm btn-warning" onclick="editUser('${user.id}')">
+          <button class="btn btn-sm btn-warning" onclick="editUser('${
+            user.id
+          }')">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">
+          <button class="btn btn-sm btn-danger" onclick="deleteUser('${
+            user.id
+          }')">
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -139,7 +157,7 @@ const Components = {
   },
 
   // Create empty state
-  createEmptyState(message, icon = 'fas fa-inbox') {
+  createEmptyState(message, icon = "fas fa-inbox") {
     return `
       <div class="text-center py-5">
         <i class="${icon} fs-1 text-muted mb-3"></i>
@@ -149,7 +167,7 @@ const Components = {
   },
 
   // Create modal
-  createModal(id, title, body, footer = '') {
+  createModal(id, title, body, footer = "") {
     return `
       <div class="modal fade" id="${id}" tabindex="-1">
         <div class="modal-dialog">
@@ -161,10 +179,21 @@ const Components = {
             <div class="modal-body">
               ${body}
             </div>
-            ${footer ? `<div class="modal-footer">${footer}</div>` : ''}
+            ${footer ? `<div class="modal-footer">${footer}</div>` : ""}
           </div>
         </div>
       </div>
     `;
-  }
+  },
 };
+
+// Add logout handler when DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      Auth.logout();
+    });
+  }
+});

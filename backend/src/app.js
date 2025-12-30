@@ -17,7 +17,7 @@ const app = express();
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: process.env.NODE_ENV === "production" ? 100 : 10000,
   message: "Too many requests from this IP, please try again later.",
 });
 
@@ -27,7 +27,13 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        scriptSrc: [
+          "'self'",
+          "https://cdn.jsdelivr.net",
+          "https://cdnjs.cloudflare.com",
+          "'unsafe-inline'",
+        ],
+        scriptSrcAttr: ["'unsafe-inline'"], // ✅ Allow inline event handlers
         styleSrc: [
           "'self'",
           "https://cdn.jsdelivr.net",
@@ -79,12 +85,5 @@ app.get("/api/health", (req, res) => {
 
 app.use(notFound);
 app.use(errorHandler);
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-});
 
 module.exports = app;

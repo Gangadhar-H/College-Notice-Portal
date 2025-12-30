@@ -44,44 +44,44 @@ const Auth = {
     try {
       await API.post(API_CONFIG.ENDPOINTS.LOGOUT);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       this.clearAuth();
-      window.location.href = '/index.html';
+      window.location.href = "/index.html";
     }
   },
 
   // Redirect based on role
+  // Redirect based on role
+  // Redirect based on role
+  // Redirect based on role
   redirectToDashboard() {
     const role = this.getUserRole();
-    switch (role) {
-      case role.ADMIN:
-        window.location.href = '/pages/admin/dashboard.html';
-        break;
-      case role.FACULTY:
-        window.location.href = '/pages/faculty/dashboard.html';
-        break;
-      case role.STUDENT:
-        window.location.href = '/pages/student/dashboard.html';
-        break;
-      default:
-        window.location.href = '/index.html';
+
+    if (role === "admin") {
+      window.location.href = "/pages/admin/dashboard.html";
+    } else if (role === "faculty") {
+      window.location.href = "/pages/faculty/dashboard.html";
+    } else if (role === "student") {
+      window.location.href = "/pages/student/dashboard.html";
+    } else {
+      window.location.href = "/index.html";
     }
   },
 
   // Check authentication and redirect if needed
   requireAuth(allowedRoles = []) {
     if (!this.isAuthenticated()) {
-      window.location.href = '/index.html';
+      window.location.href = "/index.html";
       return false;
     }
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(this.getUserRole())) {
-      alert('Access denied. Insufficient permissions.');
+      alert("Access denied. Insufficient permissions.");
       this.redirectToDashboard();
       return false;
     }
 
     return true;
-  }
+  },
 };

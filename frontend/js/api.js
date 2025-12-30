@@ -6,57 +6,59 @@ const API = {
     const token = Auth.getToken();
 
     const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers
+      "Content-Type": "application/json",
+      ...options.headers,
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    // Only add Authorization header if we have a real token (not cookie-based auth)
+    if (token && token !== "cookie-auth") {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     try {
       const response = await fetch(url, {
         ...options,
-        headers
+        headers,
+        credentials: "include", // ADD THIS LINE - Important for cookie-based auth
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.details || 'Request failed');
+        throw new Error(data.error || data.details || "Request failed");
       }
 
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error("API Error:", error);
       throw error;
     }
   },
 
   // GET request
   async get(endpoint) {
-    return this.request(endpoint, { method: 'GET' });
+    return this.request(endpoint, { method: "GET" });
   },
 
   // POST request
   async post(endpoint, body) {
     return this.request(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(body)
+      method: "POST",
+      body: JSON.stringify(body),
     });
   },
 
   // PUT request
   async put(endpoint, body) {
     return this.request(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(body)
+      method: "PUT",
+      body: JSON.stringify(body),
     });
   },
 
   // DELETE request
   async delete(endpoint) {
-    return this.request(endpoint, { method: 'DELETE' });
+    return this.request(endpoint, { method: "DELETE" });
   },
 
   // Auth APIs
@@ -102,7 +104,10 @@ const API = {
   },
 
   async updateNotice(noticeId, noticeData) {
-    return this.put(`${API_CONFIG.ENDPOINTS.ADMIN_NOTICES}/${noticeId}`, noticeData);
+    return this.put(
+      `${API_CONFIG.ENDPOINTS.ADMIN_NOTICES}/${noticeId}`,
+      noticeData
+    );
   },
 
   async deleteNotice(noticeId) {
@@ -124,14 +129,14 @@ const API = {
   async assignFaculty(facultyId, classId) {
     return this.post(API_CONFIG.ENDPOINTS.ADMIN_ASSIGN_FACULTY, {
       faculty_id: facultyId,
-      class_id: classId
+      class_id: classId,
     });
   },
 
   async removeFaculty(facultyId, classId) {
     return this.delete(API_CONFIG.ENDPOINTS.ADMIN_REMOVE_FACULTY, {
       faculty_id: facultyId,
-      class_id: classId
+      class_id: classId,
     });
   },
 
@@ -149,7 +154,10 @@ const API = {
   },
 
   async updateFacultyNotice(noticeId, noticeData) {
-    return this.put(`${API_CONFIG.ENDPOINTS.FACULTY_NOTICES}/${noticeId}`, noticeData);
+    return this.put(
+      `${API_CONFIG.ENDPOINTS.FACULTY_NOTICES}/${noticeId}`,
+      noticeData
+    );
   },
 
   async deleteFacultyNotice(noticeId) {
@@ -187,5 +195,5 @@ const API = {
 
   async getStudentDepartments() {
     return this.get(API_CONFIG.ENDPOINTS.STUDENT_DEPARTMENTS);
-  }
+  },
 };
