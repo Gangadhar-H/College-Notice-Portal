@@ -169,9 +169,8 @@ const API = {
   },
 
   async getFacultyDepartments() {
-    return this.get(API_CONFIG.ENDPOINTS.FACULTY_DEPARTMENTS);
+    return this.get("/faculty/classes"); // Direct path without /api prefix
   },
-
   // Student APIs
   async getStudentDashboard() {
     return this.get(API_CONFIG.ENDPOINTS.STUDENT_DASHBOARD);
