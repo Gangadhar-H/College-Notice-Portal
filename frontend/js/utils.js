@@ -233,5 +233,10 @@ const Utils = {
   },
 };
 
+// Aliases for backward compatibility
+Utils.showLoading = Utils.showButtonLoading;
+Utils.hideLoading = Utils.hideButtonLoading;
+
+
 // Make globally available
 window.Utils = Utils;

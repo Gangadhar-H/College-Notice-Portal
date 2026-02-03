@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 require("dotenv").config();
 
 const authRoutes = require("./routes/auth.routes");
@@ -11,7 +12,6 @@ const adminRoutes = require("./routes/admin.routes");
 const facultyRoutes = require("./routes/faculty.routes");
 const studentRoutes = require("./routes/student.routes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
-const path = require("path");
 
 const app = express();
 
@@ -21,7 +21,6 @@ const limiter = rateLimit({
   message: "Too many requests from this IP, please try again later.",
 });
 
-// app.use(helmet());
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -33,7 +32,7 @@ app.use(
           "https://cdnjs.cloudflare.com",
           "'unsafe-inline'",
         ],
-        scriptSrcAttr: ["'unsafe-inline'"], // ✅ Allow inline event handlers
+        scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: [
           "'self'",
           "https://cdn.jsdelivr.net",
@@ -41,40 +40,39 @@ app.use(
           "'unsafe-inline'",
         ],
         fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
-        imgSrc: ["'self'", "data:"],
+        imgSrc: ["'self'", "data:", "blob:"],
         connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
       },
     },
   })
 );
 
-// app.use(cors());
 app.use(
   cors({
-    // origin: 'http://127.0.0.1:5500', // Your frontend URL
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   })
 );
+
 app.use(morgan("combined"));
 app.use(limiter);
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Serve frontend static files
+// Serve static files from frontend
 app.use(express.static(path.join(__dirname, "../../frontend")));
 
-// Serve index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../frontend/index.html"));
-});
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/student", studentRoutes);
 
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
@@ -83,7 +81,15 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Serve index.html for root
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../frontend/index.html"));
+});
+
+// 404 handler
 app.use(notFound);
+
+// Error handler
 app.use(errorHandler);
 
 module.exports = app;

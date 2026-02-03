@@ -19,7 +19,7 @@ const API = {
       const response = await fetch(url, {
         ...options,
         headers,
-        credentials: "include", // ADD THIS LINE - Important for cookie-based auth
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -74,7 +74,7 @@ const API = {
     return this.get(API_CONFIG.ENDPOINTS.PROFILE);
   },
 
-  // Admin APIs
+  // ==================== ADMIN APIs ====================
   async getAdminDashboard() {
     return this.get(API_CONFIG.ENDPOINTS.ADMIN_DASHBOARD);
   },
@@ -140,7 +140,108 @@ const API = {
     });
   },
 
-  // Faculty APIs
+  // ==================== SECTIONS APIs ====================
+  async getAllSections() {
+    return this.get("/admin/sections");
+  },
+
+  async getSectionsByClass(classId) {
+    return this.get(`/admin/sections/class/${classId}`);
+  },
+
+  async createSection(sectionData) {
+    return this.post("/admin/sections", sectionData);
+  },
+
+  async updateSection(sectionId, sectionData) {
+    return this.put(`/admin/sections/${sectionId}`, sectionData);
+  },
+
+  async deleteSection(sectionId) {
+    return this.delete(`/admin/sections/${sectionId}`);
+  },
+
+  // ==================== FILE UPLOAD APIs ====================
+  async createNoticeWithFiles(formData) {
+    const url = `${API_CONFIG.BASE_URL}/admin/notices`;
+    const token = Auth.getToken();
+
+    const headers = {};
+    if (token && token !== "cookie-auth") {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || "Request failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async updateNoticeWithFiles(noticeId, formData) {
+    const url = `${API_CONFIG.BASE_URL}/admin/notices/${noticeId}`;
+    const token = Auth.getToken();
+
+    const headers = {};
+    if (token && token !== "cookie-auth") {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "PUT",
+        headers,
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || "Request failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async deleteAttachment(attachmentId) {
+    return this.delete(`/admin/attachments/${attachmentId}`);
+  },
+
+  // ==================== FACULTY SECTION ASSIGNMENTS ====================
+  async assignFacultyToSection(facultyId, sectionId) {
+    return this.post("/admin/assign-faculty-section", {
+      faculty_id: facultyId,
+      section_id: sectionId,
+    });
+  },
+
+  async removeFacultyFromSection(facultyId, sectionId) {
+    return this.delete("/admin/remove-faculty-section", {
+      faculty_id: facultyId,
+      section_id: sectionId,
+    });
+  },
+
+  // ==================== FACULTY APIs ====================
   async getFacultyDashboard() {
     return this.get(API_CONFIG.ENDPOINTS.FACULTY_DASHBOARD);
   },
@@ -169,9 +270,10 @@ const API = {
   },
 
   async getFacultyDepartments() {
-    return this.get("/faculty/classes"); // Direct path without /api prefix
+    return this.get("/faculty/classes");
   },
-  // Student APIs
+
+  // ==================== STUDENT APIs ====================
   async getStudentDashboard() {
     return this.get(API_CONFIG.ENDPOINTS.STUDENT_DASHBOARD);
   },

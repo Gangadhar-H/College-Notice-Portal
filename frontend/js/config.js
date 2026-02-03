@@ -20,7 +20,8 @@ const API_CONFIG = {
     FACULTY_DASHBOARD: "/faculty/dashboard",
     FACULTY_NOTICES: "/faculty/notices",
     FACULTY_STUDENTS: "/faculty/students",
-    FACULTY_DEPARTMENTS: "/faculty/departments",
+    // ✅ updated to match api.js
+    FACULTY_DEPARTMENTS: "/faculty/classes",
 
     // Student
     STUDENT_DASHBOARD: "/student/dashboard",
