@@ -45,30 +45,39 @@ const createNoticeController = async (req, res) => {
 
     // Validate that faculty can only send notices to their assigned classes/sections
     if (notice_type === "CLASS" || notice_type === "SECTION") {
-      const [facultyClasses, facultySections] = await Promise.all([
-        getFacultyClasses(req.user.id),
-        require("../models/queries").getFacultySections(req.user.id),
-      ]);
-
+      const facultyClasses = await getFacultyClasses(req.user.id);
       const facultyClassIds = facultyClasses.map((c) => c.id);
-      const facultySectionIds = facultySections.map((s) => s.id);
 
       // Parse recipients
       const recipientsList =
         typeof recipients === "string" ? JSON.parse(recipients) : recipients;
 
       // Validate access to all recipients
-      for (const recipient of recipientsList) {
-        if (recipient.section_id) {
-          if (!facultySectionIds.includes(recipient.section_id)) {
-            return res.status(403).json({
-              error: "You can only send notices to your assigned sections",
-            });
-          }
-        } else if (recipient.class_id) {
-          if (!facultyClassIds.includes(recipient.class_id)) {
+      if (notice_type === "CLASS") {
+        // For CLASS type, only check class_id access
+        for (const recipient of recipientsList) {
+          if (
+            recipient.class_id &&
+            !facultyClassIds.includes(recipient.class_id)
+          ) {
             return res.status(403).json({
               error: "You can only send notices to your assigned classes",
+            });
+          }
+        }
+      } else if (notice_type === "SECTION") {
+        // For SECTION type, check section_id access
+        const facultySections =
+          await require("../models/queries").getFacultySections(req.user.id);
+        const facultySectionIds = facultySections.map((s) => s.id);
+
+        for (const recipient of recipientsList) {
+          if (
+            recipient.section_id &&
+            !facultySectionIds.includes(recipient.section_id)
+          ) {
+            return res.status(403).json({
+              error: "You can only send notices to your assigned sections",
             });
           }
         }
@@ -96,6 +105,21 @@ const createNoticeController = async (req, res) => {
         await addNoticeRecipient(notice.id, {
           class_id: recipient.class_id || null,
           section_id: recipient.section_id || null,
+        });
+      }
+    }
+
+    // Handle file uploads
+    if (req.files && req.files.length > 0) {
+      const { addNoticeAttachment } = require("../models/queries");
+      for (const file of req.files) {
+        await addNoticeAttachment({
+          notice_id: notice.id,
+          filename: file.filename,
+          original_filename: file.originalname,
+          file_path: file.path,
+          file_type: file.mimetype,
+          file_size: file.size,
         });
       }
     }
@@ -135,28 +159,37 @@ const updateNoticeController = async (req, res) => {
 
     // Validate class/section access for CLASS and SECTION notices
     if (notice_type === "CLASS" || notice_type === "SECTION") {
-      const [facultyClasses, facultySections] = await Promise.all([
-        getFacultyClasses(req.user.id),
-        require("../models/queries").getFacultySections(req.user.id),
-      ]);
-
+      const facultyClasses = await getFacultyClasses(req.user.id);
       const facultyClassIds = facultyClasses.map((c) => c.id);
-      const facultySectionIds = facultySections.map((s) => s.id);
 
       const recipientsList =
         typeof recipients === "string" ? JSON.parse(recipients) : recipients;
 
-      for (const recipient of recipientsList) {
-        if (recipient.section_id) {
-          if (!facultySectionIds.includes(recipient.section_id)) {
-            return res.status(403).json({
-              error: "You can only send notices to your assigned sections",
-            });
-          }
-        } else if (recipient.class_id) {
-          if (!facultyClassIds.includes(recipient.class_id)) {
+      if (notice_type === "CLASS") {
+        // For CLASS type, only check class_id access
+        for (const recipient of recipientsList) {
+          if (
+            recipient.class_id &&
+            !facultyClassIds.includes(recipient.class_id)
+          ) {
             return res.status(403).json({
               error: "You can only send notices to your assigned classes",
+            });
+          }
+        }
+      } else if (notice_type === "SECTION") {
+        // For SECTION type, check section_id access
+        const facultySections =
+          await require("../models/queries").getFacultySections(req.user.id);
+        const facultySectionIds = facultySections.map((s) => s.id);
+
+        for (const recipient of recipientsList) {
+          if (
+            recipient.section_id &&
+            !facultySectionIds.includes(recipient.section_id)
+          ) {
+            return res.status(403).json({
+              error: "You can only send notices to your assigned sections",
             });
           }
         }
@@ -188,6 +221,21 @@ const updateNoticeController = async (req, res) => {
         await addNoticeRecipient(id, {
           class_id: recipient.class_id || null,
           section_id: recipient.section_id || null,
+        });
+      }
+    }
+
+    // Handle new file uploads
+    if (req.files && req.files.length > 0) {
+      const { addNoticeAttachment } = require("../models/queries");
+      for (const file of req.files) {
+        await addNoticeAttachment({
+          notice_id: id,
+          filename: file.filename,
+          original_filename: file.originalname,
+          file_path: file.path,
+          file_type: file.mimetype,
+          file_size: file.size,
         });
       }
     }

@@ -278,6 +278,66 @@ const API = {
     return this.get("/faculty/sections"); // ADD THIS LINE
   },
 
+  async createFacultyNoticeWithFiles(formData) {
+    const url = `${API_CONFIG.BASE_URL}/faculty/notices`;
+    const token = Auth.getToken();
+
+    const headers = {};
+    if (token && token !== "cookie-auth") {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || "Request failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async updateFacultyNoticeWithFiles(noticeId, formData) {
+    const url = `${API_CONFIG.BASE_URL}/faculty/notices/${noticeId}`;
+    const token = Auth.getToken();
+
+    const headers = {};
+    if (token && token !== "cookie-auth") {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "PUT",
+        headers,
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || "Request failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
   // ==================== STUDENT APIs ====================
   async getStudentDashboard() {
     return this.get(API_CONFIG.ENDPOINTS.STUDENT_DASHBOARD);
