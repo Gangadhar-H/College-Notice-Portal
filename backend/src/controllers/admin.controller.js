@@ -160,13 +160,29 @@ const createNoticeController = async (req, res) => {
     });
 
     // Add recipients if notice type is CLASS or SECTION
+    // if (
+    //   (notice_type === "CLASS" || notice_type === "SECTION") &&
+    //   recipients &&
+    //   recipients.length > 0
+    // ) {
+    //   for (const recipient of recipients) {
+    //     await addNoticeRecipient(notice.id, recipient);
+    //   }
+    // }
+    // Add recipients if notice type is CLASS or SECTION
     if (
       (notice_type === "CLASS" || notice_type === "SECTION") &&
       recipients &&
       recipients.length > 0
     ) {
-      for (const recipient of recipients) {
-        await addNoticeRecipient(notice.id, recipient);
+      const recipientsList =
+        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
+
+      for (const recipient of recipientsList) {
+        await addNoticeRecipient(notice.id, {
+          class_id: recipient.class_id || null,
+          section_id: recipient.section_id || null,
+        });
       }
     }
 
@@ -214,6 +230,19 @@ const updateNoticeController = async (req, res) => {
     }
 
     // Update recipients
+    // await deleteNoticeRecipients(id);
+
+    // if (
+    //   (notice_type === "CLASS" || notice_type === "SECTION") &&
+    //   recipients &&
+    //   recipients.length > 0
+    // ) {
+    //   for (const recipient of recipients) {
+    //     await addNoticeRecipient(id, recipient);
+    //   }
+    // }
+
+    // Update recipients
     await deleteNoticeRecipients(id);
 
     if (
@@ -221,8 +250,14 @@ const updateNoticeController = async (req, res) => {
       recipients &&
       recipients.length > 0
     ) {
-      for (const recipient of recipients) {
-        await addNoticeRecipient(id, recipient);
+      const recipientsList =
+        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
+
+      for (const recipient of recipientsList) {
+        await addNoticeRecipient(id, {
+          class_id: recipient.class_id || null,
+          section_id: recipient.section_id || null,
+        });
       }
     }
 

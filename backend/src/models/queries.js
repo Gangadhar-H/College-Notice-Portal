@@ -44,7 +44,9 @@ module.exports = {
   },
 
   async deleteUser(id) {
-    const result = await query("DELETE FROM users WHERE id = $1 RETURNING *", [id]);
+    const result = await query("DELETE FROM users WHERE id = $1 RETURNING *", [
+      id,
+    ]);
     return result[0];
   },
 
@@ -67,7 +69,10 @@ module.exports = {
   },
 
   async deleteClass(id) {
-    const result = await query("DELETE FROM classes WHERE id = $1 RETURNING *", [id]);
+    const result = await query(
+      "DELETE FROM classes WHERE id = $1 RETURNING *",
+      [id]
+    );
     return result[0];
   },
 
@@ -112,23 +117,26 @@ module.exports = {
   },
 
   async deleteSection(id) {
-    const result = await query("DELETE FROM sections WHERE id = $1 RETURNING *", [id]);
+    const result = await query(
+      "DELETE FROM sections WHERE id = $1 RETURNING *",
+      [id]
+    );
     return result[0];
   },
 
   // ==================== NOTICE QUERIES ====================
   async getAllNotices() {
     const notices = await query(`
-      SELECT n.*, u.name as sender_name, u.role as sender_role
-      FROM notices n 
-      JOIN users u ON n.sent_by = u.id 
-      ORDER BY n.created_at DESC
-    `);
+    SELECT n.*, u.name as sender_name, u.role as sender_role
+    FROM notices n 
+    JOIN users u ON n.sent_by = u.id 
+    ORDER BY n.created_at DESC
+  `);
 
     // Get recipients and attachments for each notice
     for (let notice of notices) {
-      notice.recipients = await this.getNoticeRecipients(notice.id);
-      notice.attachments = await this.getNoticeAttachments(notice.id);
+      notice.recipients = await module.exports.getNoticeRecipients(notice.id);
+      notice.attachments = await module.exports.getNoticeAttachments(notice.id);
     }
 
     return notices;
@@ -137,19 +145,19 @@ module.exports = {
   async getNoticeById(id) {
     const notices = await query(
       `
-      SELECT n.*, u.name as sender_name, u.role as sender_role
-      FROM notices n 
-      JOIN users u ON n.sent_by = u.id 
-      WHERE n.id = $1
-    `,
+    SELECT n.*, u.name as sender_name, u.role as sender_role
+    FROM notices n 
+    JOIN users u ON n.sent_by = u.id 
+    WHERE n.id = $1
+  `,
       [id]
     );
 
     if (notices.length === 0) return null;
 
     const notice = notices[0];
-    notice.recipients = await this.getNoticeRecipients(notice.id);
-    notice.attachments = await this.getNoticeAttachments(notice.id);
+    notice.recipients = await module.exports.getNoticeRecipients(notice.id);
+    notice.attachments = await module.exports.getNoticeAttachments(notice.id);
 
     return notice;
   },
@@ -173,7 +181,10 @@ module.exports = {
   },
 
   async deleteNotice(id) {
-    const result = await query("DELETE FROM notices WHERE id = $1 RETURNING *", [id]);
+    const result = await query(
+      "DELETE FROM notices WHERE id = $1 RETURNING *",
+      [id]
+    );
     return result[0];
   },
 
@@ -201,12 +212,21 @@ module.exports = {
   },
 
   async deleteNoticeRecipients(noticeId) {
-    await query("DELETE FROM notice_recipients WHERE notice_id = $1", [noticeId]);
+    await query("DELETE FROM notice_recipients WHERE notice_id = $1", [
+      noticeId,
+    ]);
   },
 
   // ==================== NOTICE ATTACHMENTS QUERIES ====================
   async addNoticeAttachment(attachmentData) {
-    const { notice_id, filename, original_filename, file_path, file_type, file_size } = attachmentData;
+    const {
+      notice_id,
+      filename,
+      original_filename,
+      file_path,
+      file_type,
+      file_size,
+    } = attachmentData;
     const result = await query(
       "INSERT INTO notice_attachments (notice_id, filename, original_filename, file_path, file_type, file_size) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
       [notice_id, filename, original_filename, file_path, file_type, file_size]
@@ -222,12 +242,18 @@ module.exports = {
   },
 
   async deleteNoticeAttachment(id) {
-    const result = await query("DELETE FROM notice_attachments WHERE id = $1 RETURNING *", [id]);
+    const result = await query(
+      "DELETE FROM notice_attachments WHERE id = $1 RETURNING *",
+      [id]
+    );
     return result[0];
   },
 
   async deleteNoticeAttachments(noticeId) {
-    const result = await query("DELETE FROM notice_attachments WHERE notice_id = $1 RETURNING *", [noticeId]);
+    const result = await query(
+      "DELETE FROM notice_attachments WHERE notice_id = $1 RETURNING *",
+      [noticeId]
+    );
     return result;
   },
 
@@ -316,8 +342,8 @@ module.exports = {
 
     // Get recipients and attachments for each notice
     for (let notice of notices) {
-      notice.recipients = await this.getNoticeRecipients(notice.id);
-      notice.attachments = await this.getNoticeAttachments(notice.id);
+      notice.recipients = await module.exports.getNoticeRecipients(notice.id);
+      notice.attachments = await module.exports.getNoticeAttachments(notice.id);
     }
 
     return notices;
@@ -363,8 +389,8 @@ module.exports = {
 
     // Get recipients and attachments for each notice
     for (let notice of notices) {
-      notice.recipients = await this.getNoticeRecipients(notice.id);
-      notice.attachments = await this.getNoticeAttachments(notice.id);
+      notice.recipients = await module.exports.getNoticeRecipients(notice.id);
+      notice.attachments = await module.exports.getNoticeAttachments(notice.id);
     }
 
     return notices;
@@ -386,13 +412,22 @@ module.exports = {
   },
 
   async getNoticeStats() {
-    const [total, all, faculty, class_notices, section_notices] = await Promise.all([
-      query("SELECT COUNT(*) as count FROM notices"),
-      query("SELECT COUNT(*) as count FROM notices WHERE notice_type = 'ALL'"),
-      query("SELECT COUNT(*) as count FROM notices WHERE notice_type = 'FACULTY'"),
-      query("SELECT COUNT(*) as count FROM notices WHERE notice_type = 'CLASS'"),
-      query("SELECT COUNT(*) as count FROM notices WHERE notice_type = 'SECTION'"),
-    ]);
+    const [total, all, faculty, class_notices, section_notices] =
+      await Promise.all([
+        query("SELECT COUNT(*) as count FROM notices"),
+        query(
+          "SELECT COUNT(*) as count FROM notices WHERE notice_type = 'ALL'"
+        ),
+        query(
+          "SELECT COUNT(*) as count FROM notices WHERE notice_type = 'FACULTY'"
+        ),
+        query(
+          "SELECT COUNT(*) as count FROM notices WHERE notice_type = 'CLASS'"
+        ),
+        query(
+          "SELECT COUNT(*) as count FROM notices WHERE notice_type = 'SECTION'"
+        ),
+      ]);
 
     return {
       total: parseInt(total[0].count),

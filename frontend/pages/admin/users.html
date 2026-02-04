@@ -3,144 +3,111 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Management - Notice Board System</title>
+    <title>User Management</title>
+
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <link
-      rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
     />
-    <link rel="stylesheet" href="../../css/style.css" />
   </head>
+
   <body>
     <div id="navbar"></div>
 
-    <div class="page-container">
-      <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1><i class="fas fa-users me-2"></i>User Management</h1>
-          <button
-            class="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#userModal"
-            id="addUserBtn"
-          >
-            <i class="fas fa-plus me-2"></i>Add User
-          </button>
-        </div>
+    <div class="container mt-4">
+      <div class="d-flex justify-content-between mb-3">
+        <h3><i class="fas fa-users"></i> User Management</h3>
+        <button class="btn btn-primary" id="addUserBtn">
+          <i class="fas fa-plus"></i> Add User
+        </button>
+      </div>
 
-        <div class="card shadow-sm">
-          <div class="card-body">
+      <input
+        type="text"
+        id="searchInput"
+        class="form-control mb-3"
+        placeholder="Search users..."
+      />
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Class</th>
+            <th>Section</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal fade" id="userModal">
+      <div class="modal-dialog">
+        <form class="modal-content" id="userForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Add User</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <input type="hidden" id="userId" />
+
             <div class="mb-3">
+              <label>Name</label>
+              <input type="text" id="userName" class="form-control" required />
+            </div>
+
+            <div class="mb-3">
+              <label>Email</label>
               <input
-                type="text"
+                type="email"
+                id="userEmail"
                 class="form-control"
-                id="searchInput"
-                placeholder="Search users..."
+                required
               />
             </div>
 
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Class</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="userTableBody">
-                  <tr>
-                    <td colspan="6" class="text-center">
-                      ${Components.createLoadingSpinner()}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="mb-3" id="passwordField">
+              <label>Password</label>
+              <input type="password" id="userPassword" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+              <label>Role</label>
+              <select id="userRole" class="form-select" required>
+                <option value="">Select</option>
+                <option value="admin">Admin</option>
+                <option value="faculty">Faculty</option>
+                <option value="student">Student</option>
+              </select>
+            </div>
+
+            <div class="mb-3" id="classField" style="display: none">
+              <label>Class</label>
+              <select id="userClass" class="form-select"></select>
+            </div>
+
+            <div class="mb-3" id="sectionField" style="display: none">
+              <label>Section</label>
+              <select id="userSection" class="form-select" disabled></select>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- User Modal -->
-    <div class="modal fade" id="userModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalTitle">Add User</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button class="btn btn-primary" type="submit">Save</button>
           </div>
-          <form id="userForm">
-            <div class="modal-body">
-              <input type="hidden" id="userId" />
-
-              <div class="mb-3">
-                <label for="userName" class="form-label">Name</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="userName"
-                  required
-                />
-              </div>
-
-              <div class="mb-3">
-                <label for="userEmail" class="form-label">Email</label>
-                <input
-                  type="email"
-                  class="form-control"
-                  id="userEmail"
-                  required
-                />
-              </div>
-
-              <div class="mb-3" id="passwordField">
-                <label for="userPassword" class="form-label">Password</label>
-                <input type="password" class="form-control" id="userPassword" />
-                <small class="text-muted"
-                  >Min 6 chars with uppercase, lowercase, and number</small
-                >
-              </div>
-
-              <div class="mb-3">
-                <label for="userRole" class="form-label">Role</label>
-                <select class="form-select" id="userRole" required>
-                  <option value="">Select Role</option>
-                  <option value="admin">Admin</option>
-                  <option value="faculty">Faculty</option>
-                  <option value="student">Student</option>
-                </select>
-              </div>
-
-              <div class="mb-3" id="classField" style="display: none">
-                <label for="userClass" class="form-label">Class</label>
-                <select class="form-select" id="userClass">
-                  <option value="">Select Class</option>
-                </select>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Cancel
-              </button>
-              <button type="submit" class="btn btn-primary">Save</button>
-            </div>
-          </form>
-        </div>
+        </form>
       </div>
     </div>
 
@@ -159,192 +126,166 @@
 
       let allUsers = [];
       let allClasses = [];
+      let allSections = [];
       let editingUserId = null;
 
+      /* LOAD DATA */
       async function loadUsers() {
-        try {
-          const data = await API.getAllUsers();
-          allUsers = data.users;
-          displayUsers(allUsers);
-        } catch (error) {
-          Utils.showToast("Failed to load users", "danger");
-        }
+        const data = await API.getAllUsers();
+        allUsers = data.users;
+        renderUsers(allUsers);
       }
 
       async function loadClasses() {
-        try {
-          const data = await API.getAllClasses();
-          allClasses = data.classes;
+        const [cls, sec] = await Promise.all([
+          API.getAllClasses(),
+          API.getAllSections(),
+        ]);
+        allClasses = cls.classes;
+        allSections = sec.sections;
 
-          const select = document.getElementById("userClass");
-          select.innerHTML = '<option value="">Select Class</option>';
-          allClasses.forEach((cls) => {
-            select.innerHTML += `<option value="${cls.id}">${cls.name}</option>`;
-          });
-        } catch (error) {
-          console.error("Failed to load classes:", error);
-        }
+        userClass.innerHTML =
+          '<option value="">Select Class</option>' +
+          allClasses
+            .map((c) => `<option value="${c.id}">${c.name}</option>`)
+            .join("");
       }
 
-      function displayUsers(users) {
-        const tbody = document.getElementById("userTableBody");
-
-        if (users.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6">${Components.createEmptyState(
-            "No users found"
-          )}</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = users
+      /* RENDER */
+      function renderUsers(users) {
+        userTableBody.innerHTML = users
           .map(
-            (user) => `
-        <tr>
-          <td>${Utils.escapeHtml(user.name)}</td>
-          <td>${Utils.escapeHtml(user.email)}</td>
-          <td><span class="badge ${Utils.getRoleBadgeClass(user.role)}">${
-              user.role
-            }</span></td>
-          <td>${user.class_name || "-"}</td>
-          <td>${Utils.formatDate(user.created_at)}</td>
-          <td>
-            <button class="btn btn-sm btn-warning" onclick="editUser('${
-              user.id
-            }')">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="deleteUser('${
-              user.id
-            }')">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `
+            (u) => `
+    <tr>
+      <td>${u.name}</td>
+      <td>${u.email}</td>
+      <td>${u.role}</td>
+      <td>${u.class_name || "-"}</td>
+      <td>${u.section_name || "-"}</td>
+      <td>
+        <button class="btn btn-warning btn-sm" onclick="editUser('${u.id}')">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `
           )
           .join("");
       }
 
+      /* ROLE CHANGE */
       function handleRoleChange() {
-        const role = document.getElementById("userRole").value;
-        const classField = document.getElementById("classField");
-
-        if (role === "student") {
+        if (userRole.value === "student") {
           classField.style.display = "block";
-          document.getElementById("userClass").required = true;
+          sectionField.style.display = "block";
+          userClass.required = true;
         } else {
           classField.style.display = "none";
-          document.getElementById("userClass").required = false;
+          sectionField.style.display = "none";
+          userClass.required = false;
+          userSection.disabled = true;
         }
       }
 
-      function openCreateModal() {
+      /* CLASS CHANGE */
+      userClass.addEventListener("change", (e) => {
+        const cid = e.target.value;
+        if (!cid) {
+          userSection.disabled = true;
+          userSection.innerHTML = "";
+          return;
+        }
+
+        const secs = allSections.filter((s) => s.class_id === cid);
+        userSection.disabled = false;
+        userSection.innerHTML =
+          '<option value="">Select Section</option>' +
+          secs
+            .map(
+              (s) =>
+                `<option value="${s.id}">${s.display_name || s.name}</option>`
+            )
+            .join("");
+      });
+
+      /* ADD */
+      addUserBtn.onclick = () => {
         editingUserId = null;
-        document.getElementById("modalTitle").textContent = "Add User";
-        document.getElementById("userForm").reset();
-        document.getElementById("userId").value = "";
-        document.getElementById("passwordField").style.display = "block";
-        document.getElementById("userPassword").required = true;
-        document.getElementById("classField").style.display = "none";
-      }
+        userForm.reset();
+        passwordField.style.display = "block";
+        modalTitle.textContent = "Add User";
+        handleRoleChange();
+        new bootstrap.Modal(userModal).show();
+      };
 
-      async function editUser(userId) {
-        editingUserId = userId;
-        const user = allUsers.find((u) => u.id === userId);
-
+      /* EDIT */
+      function editUser(id) {
+        const user = allUsers.find((u) => u.id === id);
         if (!user) return;
 
-        document.getElementById("modalTitle").textContent = "Edit User";
-        document.getElementById("userId").value = user.id;
-        document.getElementById("userName").value = user.name;
-        document.getElementById("userEmail").value = user.email;
-        document.getElementById("userRole").value = user.role;
-        document.getElementById("passwordField").style.display = "none";
-        document.getElementById("userPassword").required = false;
+        editingUserId = id;
+        modalTitle.textContent = "Edit User";
+        userName.value = user.name;
+        userEmail.value = user.email;
+        userRole.value = user.role;
+
+        passwordField.style.display = "none";
+        handleRoleChange();
 
         if (user.role === "student") {
-          document.getElementById("classField").style.display = "block";
-          document.getElementById("userClass").value = user.class_id || "";
+          userClass.value = user.class_id;
+          userClass.dispatchEvent(new Event("change"));
+          userSection.value = user.section_id;
         }
 
-        new bootstrap.Modal(document.getElementById("userModal")).show();
+        new bootstrap.Modal(userModal).show();
       }
 
-      async function deleteUser(userId) {
-        if (
-          !(await Utils.confirm("Are you sure you want to delete this user?"))
-        )
-          return;
+      /* DELETE */
+      async function deleteUser(id) {
+        if (!(await Utils.confirm("Delete user?"))) return;
+        await API.deleteUser(id);
+        loadUsers();
+      }
 
-        try {
-          await API.deleteUser(userId);
-          Utils.showToast("User deleted successfully", "success");
-          loadUsers();
-        } catch (error) {
-          Utils.showToast(error.message || "Failed to delete user", "danger");
+      /* SUBMIT */
+      userForm.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const data = {
+          name: userName.value,
+          email: userEmail.value,
+          role: userRole.value,
+          class_id: userClass.value || null,
+          section_id: userSection.value || null,
+        };
+
+        if (editingUserId) {
+          await API.updateUser(editingUserId, data);
+        } else {
+          data.password = userPassword.value;
+          await API.createUser(data);
         }
-      }
 
-      document
-        .getElementById("userForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
+        bootstrap.Modal.getInstance(userModal).hide();
+        loadUsers();
+      };
 
-          const name = document.getElementById("userName").value;
-          const email = document.getElementById("userEmail").value;
-          const password = document.getElementById("userPassword").value;
-          const role = document.getElementById("userRole").value;
-          const class_id = document.getElementById("userClass").value || null;
-
-          const userData = { name, email, role, class_id };
-
-          if (!editingUserId && password) {
-            if (!Utils.isValidPassword(password)) {
-              Utils.showToast("Invalid password format", "danger");
-              return;
-            }
-            userData.password = password;
-          }
-
-          try {
-            if (editingUserId) {
-              await API.updateUser(editingUserId, userData);
-              Utils.showToast("User updated successfully", "success");
-            } else {
-              await API.createUser(userData);
-              Utils.showToast("User created successfully", "success");
-            }
-
-            bootstrap.Modal.getInstance(
-              document.getElementById("userModal")
-            ).hide();
-            loadUsers();
-          } catch (error) {
-            Utils.showToast(error.message || "Operation failed", "danger");
-          }
-        });
-
-      document.getElementById("searchInput").addEventListener(
-        "input",
-        Utils.debounce((e) => {
-          const search = e.target.value.toLowerCase();
-          const filtered = allUsers.filter(
+      userRole.addEventListener("change", handleRoleChange);
+      searchInput.addEventListener("input", (e) => {
+        const q = e.target.value.toLowerCase();
+        renderUsers(
+          allUsers.filter(
             (u) =>
-              u.name.toLowerCase().includes(search) ||
-              u.email.toLowerCase().includes(search) ||
-              u.role.toLowerCase().includes(search)
-          );
-          displayUsers(filtered);
-        }, 300)
-      );
-
-      document
-        .getElementById("addUserBtn")
-        .addEventListener("click", openCreateModal);
-
-      document
-        .getElementById("userRole")
-        .addEventListener("change", handleRoleChange);
+              u.name.toLowerCase().includes(q) ||
+              u.email.toLowerCase().includes(q) ||
+              u.role.toLowerCase().includes(q)
+          )
+        );
+      });
 
       loadUsers();
       loadClasses();

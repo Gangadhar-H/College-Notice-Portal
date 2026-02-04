@@ -9,12 +9,13 @@ const Components = {
 
     if (role === ROLES.ADMIN) {
       navLinks = `
-        <li class="nav-item"><a class="nav-link" href="/pages/admin/dashboard.html">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/admin/users.html">Users</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/admin/notices.html">Notices</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/admin/classes.html">Classes</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/admin/faculty-assignments.html">Assignments</a></li>
-      `;
+    <li class="nav-item"><a class="nav-link" href="/pages/admin/dashboard.html">Dashboard</a></li>
+    <li class="nav-item"><a class="nav-link" href="/pages/admin/users.html">Users</a></li>
+    <li class="nav-item"><a class="nav-link" href="/pages/admin/notices.html">Notices</a></li>
+    <li class="nav-item"><a class="nav-link" href="/pages/admin/classes.html">Classes</a></li>
+    <li class="nav-item"><a class="nav-link" href="/pages/admin/sections.html">Sections</a></li>
+    <li class="nav-item"><a class="nav-link" href="/pages/admin/faculty-assignments.html">Assignments</a></li>
+  `;
     } else if (role === ROLES.FACULTY) {
       navLinks = `
         <li class="nav-item"><a class="nav-link" href="/pages/faculty/dashboard.html">Dashboard</a></li>

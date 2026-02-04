@@ -1,7 +1,9 @@
 // Enhanced Notices Management JavaScript
 
 Auth.requireAuth([ROLES.ADMIN]);
-document.getElementById("navbar").innerHTML = Components.createNavbar(ROLES.ADMIN);
+document.getElementById("navbar").innerHTML = Components.createNavbar(
+  ROLES.ADMIN
+);
 
 let allNotices = [];
 let allClasses = [];
@@ -64,7 +66,9 @@ function displayNotices(notices) {
           <div>
             <h5 class="mb-1">${Utils.escapeHtml(notice.title)}</h5>
             <small class="text-muted">
-              <i class="fas fa-user"></i> ${Utils.escapeHtml(notice.sender_name)} 
+              <i class="fas fa-user"></i> ${Utils.escapeHtml(
+                notice.sender_name
+              )} 
               (${notice.sender_role})
             </small>
           </div>
@@ -82,7 +86,9 @@ function displayNotices(notices) {
           
           <div class="d-flex justify-content-between align-items-center mt-3">
             <small class="text-muted">
-              <i class="fas fa-calendar"></i> ${Utils.formatDate(notice.created_at)}
+              <i class="fas fa-calendar"></i> ${Utils.formatDate(
+                notice.created_at
+              )}
             </small>
             <div>
               <button class="btn btn-sm btn-warning" onclick="editNotice('${
@@ -119,7 +125,9 @@ function getRecipientsHTML(notice) {
       if (r.section_id) {
         return `<span class="badge bg-info">${Utils.escapeHtml(
           r.class_name
-        )} - ${Utils.escapeHtml(r.section_display_name || "Section " + r.section_name)}</span>`;
+        )} - ${Utils.escapeHtml(
+          r.section_display_name || "Section " + r.section_name
+        )}</span>`;
       } else {
         return `<span class="badge bg-primary">${Utils.escapeHtml(
           r.class_name
@@ -147,13 +155,14 @@ function getAttachmentsHTML(notice) {
     <div class="attachment-item d-flex justify-content-between align-items-center">
       <div>
         <i class="${getFileIcon(att.file_type)} me-2"></i>
-        <a href="${API_CONFIG.BASE_URL.replace(
-          "/api",
-          ""
-        )}/uploads/${att.filename}" target="_blank">
+        <a href="${API_CONFIG.BASE_URL.replace("/api", "")}/uploads/${
+        att.filename
+      }" target="_blank">
           ${Utils.escapeHtml(att.original_filename)}
         </a>
-        <small class="text-muted ms-2">(${formatFileSize(att.file_size)})</small>
+        <small class="text-muted ms-2">(${formatFileSize(
+          att.file_size
+        )})</small>
       </div>
     </div>
   `
@@ -188,7 +197,7 @@ function formatFileSize(bytes) {
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 
 function getNoticeTypeBadge(type) {
@@ -252,7 +261,9 @@ document
         sections
           .map(
             (s) =>
-              `<option value="${s.id}">${s.display_name || "Section " + s.name}</option>`
+              `<option value="${s.id}">${
+                s.display_name || "Section " + s.name
+              }</option>`
           )
           .join("");
     } else {
@@ -327,7 +338,13 @@ function updateRecipientsDisplay() {
     .map(
       (r, index) => `
     <span class="recipient-item">
-      ${r.section_id ? `${r.class_name} - ${r.section_display_name || "Section " + r.section_name}` : `${r.class_name} (All Sections)`}
+      ${
+        r.section_id
+          ? `${r.class_name} - ${
+              r.section_display_name || "Section " + r.section_name
+            }`
+          : `${r.class_name} (All Sections)`
+      }
       <i class="fas fa-times remove-recipient" onclick="removeRecipient(${index})"></i>
     </span>
   `
@@ -342,20 +359,18 @@ window.removeRecipient = function (index) {
 };
 
 // Handle file selection
-document
-  .getElementById("noticeAttachments")
-  .addEventListener("change", (e) => {
-    const files = Array.from(e.target.files);
+document.getElementById("noticeAttachments").addEventListener("change", (e) => {
+  const files = Array.from(e.target.files);
 
-    if (files.length > 5) {
-      Utils.showToast("Maximum 5 files allowed", "warning");
-      e.target.value = "";
-      return;
-    }
+  if (files.length > 5) {
+    Utils.showToast("Maximum 5 files allowed", "warning");
+    e.target.value = "";
+    return;
+  }
 
-    selectedFiles = files;
-    displayFilePreview();
-  });
+  selectedFiles = files;
+  displayFilePreview();
+});
 
 function displayFilePreview() {
   const container = document.getElementById("filePreview");
@@ -440,7 +455,7 @@ window.editNotice = async function (noticeId) {
 
   // Load recipients
   selectedRecipients = notice.recipients || [];
-  
+
   // Trigger notice type change
   const event = new Event("change");
   document.getElementById("noticeType").dispatchEvent(event);
@@ -449,14 +464,17 @@ window.editNotice = async function (noticeId) {
   // Show existing attachments
   if (notice.attachments && notice.attachments.length > 0) {
     document.getElementById("existingAttachments").style.display = "block";
-    document.getElementById("existingAttachmentsList").innerHTML = notice.attachments
-      .map(
-        (att) => `
+    document.getElementById("existingAttachmentsList").innerHTML =
+      notice.attachments
+        .map(
+          (att) => `
       <div class="attachment-item d-flex justify-content-between align-items-center">
         <div>
           <i class="${getFileIcon(att.file_type)} me-2"></i>
           ${Utils.escapeHtml(att.original_filename)}
-          <small class="text-muted ms-2">(${formatFileSize(att.file_size)})</small>
+          <small class="text-muted ms-2">(${formatFileSize(
+            att.file_size
+          )})</small>
         </div>
         <button type="button" class="btn btn-sm btn-danger" onclick="deleteAttachment('${
           att.id
@@ -465,8 +483,8 @@ window.editNotice = async function (noticeId) {
         </button>
       </div>
     `
-      )
-      .join("");
+        )
+        .join("");
   }
 
   selectedFiles = [];
@@ -512,7 +530,10 @@ document.getElementById("noticeForm").addEventListener("submit", async (e) => {
   const type = document.getElementById("noticeType").value;
 
   // Validate recipients for CLASS and SECTION types
-  if ((type === "CLASS" || type === "SECTION") && selectedRecipients.length === 0) {
+  if (
+    (type === "CLASS" || type === "SECTION") &&
+    selectedRecipients.length === 0
+  ) {
     Utils.showToast("Please select at least one recipient", "warning");
     return;
   }
@@ -521,7 +542,13 @@ document.getElementById("noticeForm").addEventListener("submit", async (e) => {
   formData.append("title", document.getElementById("noticeTitle").value);
   formData.append("message", document.getElementById("noticeMessage").value);
   formData.append("notice_type", type);
-  formData.append("recipients", JSON.stringify(selectedRecipients));
+  //   formData.append("recipients", JSON.stringify(selectedRecipients));
+  // Transform recipients to match backend expectation
+  const recipients = selectedRecipients.map((r) => ({
+    class_id: r.section_id ? null : r.class_id,
+    section_id: r.section_id || null,
+  }));
+  formData.append("recipients", JSON.stringify(recipients));
 
   // Add files
   selectedFiles.forEach((file) => {
@@ -537,9 +564,7 @@ document.getElementById("noticeForm").addEventListener("submit", async (e) => {
       Utils.showToast("Notice created successfully", "success");
     }
 
-    bootstrap.Modal.getInstance(
-      document.getElementById("noticeModal")
-    ).hide();
+    bootstrap.Modal.getInstance(document.getElementById("noticeModal")).hide();
     loadData();
   } catch (error) {
     Utils.showToast(error.message || "Operation failed", "danger");
