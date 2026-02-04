@@ -43,47 +43,7 @@ const createNoticeController = async (req, res) => {
   try {
     const { title, message, notice_type, recipients } = req.body;
 
-    // Validate that faculty can only send notices to their assigned classes/sections
-    if (notice_type === "CLASS" || notice_type === "SECTION") {
-      const facultyClasses = await getFacultyClasses(req.user.id);
-      const facultyClassIds = facultyClasses.map((c) => c.id);
-
-      // Parse recipients
-      const recipientsList =
-        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
-
-      // Validate access to all recipients
-      if (notice_type === "CLASS") {
-        // For CLASS type, only check class_id access
-        for (const recipient of recipientsList) {
-          if (
-            recipient.class_id &&
-            !facultyClassIds.includes(recipient.class_id)
-          ) {
-            return res.status(403).json({
-              error: "You can only send notices to your assigned classes",
-            });
-          }
-        }
-      } else if (notice_type === "SECTION") {
-        // For SECTION type, check section_id access
-        const facultySections =
-          await require("../models/queries").getFacultySections(req.user.id);
-        const facultySectionIds = facultySections.map((s) => s.id);
-
-        for (const recipient of recipientsList) {
-          if (
-            recipient.section_id &&
-            !facultySectionIds.includes(recipient.section_id)
-          ) {
-            return res.status(403).json({
-              error: "You can only send notices to your assigned sections",
-            });
-          }
-        }
-      }
-    }
-
+    // No validation needed - faculty can send to anyone
     const notice = await createNotice({
       title,
       message,
@@ -157,45 +117,7 @@ const updateNoticeController = async (req, res) => {
         .json({ error: "You can only update your own notices" });
     }
 
-    // Validate class/section access for CLASS and SECTION notices
-    if (notice_type === "CLASS" || notice_type === "SECTION") {
-      const facultyClasses = await getFacultyClasses(req.user.id);
-      const facultyClassIds = facultyClasses.map((c) => c.id);
-
-      const recipientsList =
-        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
-
-      if (notice_type === "CLASS") {
-        // For CLASS type, only check class_id access
-        for (const recipient of recipientsList) {
-          if (
-            recipient.class_id &&
-            !facultyClassIds.includes(recipient.class_id)
-          ) {
-            return res.status(403).json({
-              error: "You can only send notices to your assigned classes",
-            });
-          }
-        }
-      } else if (notice_type === "SECTION") {
-        // For SECTION type, check section_id access
-        const facultySections =
-          await require("../models/queries").getFacultySections(req.user.id);
-        const facultySectionIds = facultySections.map((s) => s.id);
-
-        for (const recipient of recipientsList) {
-          if (
-            recipient.section_id &&
-            !facultySectionIds.includes(recipient.section_id)
-          ) {
-            return res.status(403).json({
-              error: "You can only send notices to your assigned sections",
-            });
-          }
-        }
-      }
-    }
-
+    // No validation needed - faculty can send to anyone
     const notice = await updateNotice(id, {
       title,
       message,
@@ -324,14 +246,15 @@ const getMyClasses = async (req, res) => {
 
 const getAllClassesController = async (req, res) => {
   try {
-    // Return only faculty's assigned classes, not all classes
-    const classes = await getFacultyClasses(req.user.id);
+    // Return ALL classes, not just faculty's assigned classes
+    const classes = await getAllClasses();
     res.json({ classes });
   } catch (error) {
-    console.error("Get faculty classes error:", error);
+    console.error("Get all classes error:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
 const getMySections = async (req, res) => {
   try {
     const {
@@ -357,6 +280,17 @@ const getMySections = async (req, res) => {
   }
 };
 
+const getAllSectionsController = async (req, res) => {
+  try {
+    const { getAllSections } = require("../models/queries");
+    const sections = await getAllSections();
+    res.json({ sections });
+  } catch (error) {
+    console.error("Get all sections error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getDashboard,
   getNotices,
@@ -366,5 +300,6 @@ module.exports = {
   getStudents,
   getMyClasses,
   getAllClasses: getAllClassesController,
-  getMySections, // ADD THIS LINE
+  getMySections,
+  getAllSections: getAllSectionsController, // ADD THIS LINE
 };

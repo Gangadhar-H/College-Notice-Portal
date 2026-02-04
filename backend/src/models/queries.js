@@ -352,12 +352,9 @@ module.exports = {
   // ==================== FACULTY NOTICES ====================
   // ==================== FACULTY NOTICES ====================
   async getFacultyNotices(faculty_id) {
-    // Get faculty's classes and sections
+    // Get faculty's classes
     const facultyClasses = await module.exports.getFacultyClasses(faculty_id);
-    const facultySections = await module.exports.getFacultySections(faculty_id);
-
     const classIds = facultyClasses.map((c) => c.id);
-    const sectionIds = facultySections.map((s) => s.id);
 
     let query_text = `
     SELECT DISTINCT n.*, u.name as sender_name, u.role as sender_role
@@ -365,21 +362,23 @@ module.exports = {
     JOIN users u ON n.sent_by = u.id 
     WHERE n.notice_type = 'ALL' 
        OR n.notice_type = 'FACULTY'
+       OR n.sent_by = $1
   `;
 
-    const params = [];
+    const params = [faculty_id];
 
     if (classIds.length > 0) {
       params.push(classIds);
       query_text += ` OR (n.notice_type = 'CLASS' AND n.id IN (
       SELECT notice_id FROM notice_recipients WHERE class_id = ANY($${params.length})
     ))`;
-    }
 
-    if (sectionIds.length > 0) {
-      params.push(sectionIds);
+      // Get all sections from faculty's classes
       query_text += ` OR (n.notice_type = 'SECTION' AND n.id IN (
-      SELECT notice_id FROM notice_recipients WHERE section_id = ANY($${params.length})
+      SELECT nr.notice_id 
+      FROM notice_recipients nr
+      JOIN sections s ON nr.section_id = s.id
+      WHERE s.class_id = ANY($${params.length})
     ))`;
     }
 

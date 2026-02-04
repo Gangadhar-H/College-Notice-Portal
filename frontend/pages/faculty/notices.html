@@ -54,6 +54,22 @@
         cursor: pointer;
         font-size: 12px;
       }
+      .attachment-item {
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+      }
+      .attachment-item:hover {
+        background: #e9ecef;
+      }
+      .attachment-item a {
+        text-decoration: none;
+        color: #0d6efd;
+      }
+      .attachment-item a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -114,7 +130,7 @@
               <input type="hidden" id="noticeId" />
 
               <div class="mb-3">
-                <label for="noticeTitle" class="form-label">Title</label>
+                <label for="noticeTitle" class="form-label">Title *</label>
                 <input
                   type="text"
                   class="form-control"
@@ -124,7 +140,7 @@
               </div>
 
               <div class="mb-3">
-                <label for="noticeMessage" class="form-label">Message</label>
+                <label for="noticeMessage" class="form-label">Message *</label>
                 <textarea
                   class="form-control"
                   id="noticeMessage"
@@ -133,8 +149,27 @@
                 ></textarea>
               </div>
 
+              <!-- File Attachments - MOVED BEFORE NOTICE TYPE -->
               <div class="mb-3">
-                <label for="noticeType" class="form-label">Notice Type</label>
+                <label for="noticeAttachments" class="form-label">
+                  Attachments (Optional)
+                  <small class="text-muted">- Max 5 files, 10MB each</small>
+                </label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="noticeAttachments"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                />
+                <small class="text-muted">
+                  Allowed: Images, PDF, Word, Excel, PowerPoint, Text, ZIP, RAR
+                </small>
+                <div id="filePreview" class="file-preview"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="noticeType" class="form-label">Notice Type *</label>
                 <select
                   class="form-select"
                   id="noticeType"
@@ -149,10 +184,10 @@
                 </select>
               </div>
 
-              <!-- Recipients Section -->
+              <!-- Recipients Selection -->
               <div id="recipientsSection" style="display: none">
                 <div class="mb-3">
-                  <label class="form-label">Select Recipients</label>
+                  <label class="form-label">Select Recipients *</label>
 
                   <!-- For CLASS type -->
                   <div id="classSelection" style="display: none">
@@ -199,25 +234,6 @@
 
                   <!-- Selected Recipients Display -->
                   <div id="selectedRecipients" class="mt-3"></div>
-                  <!-- File Attachments -->
-                  <div class="mb-3">
-                    <label for="noticeAttachments" class="form-label">
-                      Attachments (Optional)
-                      <small class="text-muted">- Max 5 files, 10MB each</small>
-                    </label>
-                    <input
-                      type="file"
-                      class="form-control"
-                      id="noticeAttachments"
-                      multiple
-                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-                    />
-                    <small class="text-muted">
-                      Allowed: Images, PDF, Word, Excel, PowerPoint, Text, ZIP,
-                      RAR
-                    </small>
-                    <div id="filePreview" class="file-preview"></div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -271,13 +287,13 @@
         try {
           const [classesData, sectionsData] = await Promise.all([
             API.getFacultyDepartments(),
-            API.getFacultySections(),
+            API.getAllSectionsForFaculty(), // Changed from getFacultySections
           ]);
 
           myClasses = classesData.classes;
           allSections = sectionsData.sections;
 
-          console.log("My Classes:", myClasses);
+          console.log("All Classes:", myClasses);
           console.log("All Sections:", allSections);
 
           populateSelectors();
@@ -400,53 +416,53 @@
         container.innerHTML = notices
           .map((notice) => {
             const recipientsHTML = getRecipientsHTML(notice);
+            const attachmentsHTML = getAttachmentsHTML(notice); // Add this line
 
             return `
-              <div class="card mb-3 shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 class="mb-1">${Utils.escapeHtml(notice.title)}</h5>
-                    <small class="text-muted">
-                      <i class="fas fa-user"></i> ${Utils.escapeHtml(
-                        notice.sender_name
-                      )}
-                    </small>
-                  </div>
-                  <div>
-                    <span class="badge ${getNoticeTypeBadge(
-                      notice.notice_type
-                    )}">
-                      ${getNoticeTypeLabel(notice.notice_type)}
-                    </span>
-                  </div>
+        <div class="card mb-3 shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1">${Utils.escapeHtml(notice.title)}</h5>
+              <small class="text-muted">
+                <i class="fas fa-user"></i> ${Utils.escapeHtml(
+                  notice.sender_name
+                )}
+              </small>
+            </div>
+            <div>
+              <span class="badge ${getNoticeTypeBadge(notice.notice_type)}">
+                ${getNoticeTypeLabel(notice.notice_type)}
+              </span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-text">${Utils.escapeHtml(notice.message)}</p>
+            ${recipientsHTML}
+            ${attachmentsHTML}
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                <i class="fas fa-calendar"></i> ${Utils.formatDate(
+                  notice.created_at
+                )}
+              </small>
+              ${
+                notice.sent_by === currentUser.id
+                  ? `
+                <div>
+                  <button class="btn btn-sm btn-warning" onclick="editNotice('${notice.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteNotice('${notice.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
                 </div>
-                <div class="card-body">
-                  <p class="card-text">${Utils.escapeHtml(notice.message)}</p>
-                  ${recipientsHTML}
-                  <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
-                      <i class="fas fa-calendar"></i> ${Utils.formatDate(
-                        notice.created_at
-                      )}
-                    </small>
-                    ${
-                      notice.sent_by === currentUser.id
-                        ? `
-                      <div>
-                        <button class="btn btn-sm btn-warning" onclick="editNotice('${notice.id}')">
-                          <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteNotice('${notice.id}')">
-                          <i class="fas fa-trash"></i> Delete
-                        </button>
-                      </div>
-                    `
-                        : ""
-                    }
-                  </div>
-                </div>
-              </div>
-            `;
+              `
+                  : ""
+              }
+            </div>
+          </div>
+        </div>
+      `;
           })
           .join("");
       }
@@ -483,6 +499,70 @@
             ${recipients}
           </div>
         `;
+      }
+
+      function getAttachmentsHTML(notice) {
+        if (!notice.attachments || notice.attachments.length === 0) {
+          return "";
+        }
+
+        const attachments = notice.attachments
+          .map(
+            (att) => `
+    <div class="attachment-item d-flex justify-content-between align-items-center mb-2">
+      <div>
+        <i class="${getFileIcon(att.file_type)} me-2"></i>
+        <a href="${API_CONFIG.BASE_URL.replace("/api", "")}/uploads/${
+              att.filename
+            }" target="_blank">
+          ${Utils.escapeHtml(att.original_filename)}
+        </a>
+        <small class="text-muted ms-2">(${formatFileSize(
+          att.file_size
+        )})</small>
+      </div>
+    </div>
+  `
+          )
+          .join("");
+
+        return `
+    <div class="mb-3">
+      <strong><i class="fas fa-paperclip me-1"></i>Attachments:</strong>
+      <div class="mt-2">
+        ${attachments}
+      </div>
+    </div>
+  `;
+      }
+
+      function getFileIcon(fileType) {
+        if (!fileType) return "fas fa-file";
+        if (fileType.startsWith("image/"))
+          return "fas fa-file-image text-success";
+        if (fileType.includes("pdf")) return "fas fa-file-pdf text-danger";
+        if (fileType.includes("word") || fileType.includes("document"))
+          return "fas fa-file-word text-primary";
+        if (fileType.includes("excel") || fileType.includes("spreadsheet"))
+          return "fas fa-file-excel text-success";
+        if (
+          fileType.includes("powerpoint") ||
+          fileType.includes("presentation")
+        )
+          return "fas fa-file-powerpoint text-warning";
+        if (fileType.includes("zip") || fileType.includes("rar"))
+          return "fas fa-file-archive text-secondary";
+        return "fas fa-file";
+      }
+
+      function formatFileSize(bytes) {
+        if (!bytes) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return (
+          Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+        );
       }
 
       function getNoticeTypeBadge(type) {

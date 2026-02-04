@@ -278,6 +278,10 @@ const API = {
     return this.get("/faculty/sections"); // ADD THIS LINE
   },
 
+  async getAllSectionsForFaculty() {
+    return this.get("/faculty/all-sections");
+  },
+
   async createFacultyNoticeWithFiles(formData) {
     const url = `${API_CONFIG.BASE_URL}/faculty/notices`;
     const token = Auth.getToken();

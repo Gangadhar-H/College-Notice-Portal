@@ -24,5 +24,6 @@ router.get("/students", facultyController.getStudents);
 router.get("/departments", facultyController.getAllClasses);
 router.get("/classes", facultyController.getMyClasses);
 router.get("/sections", facultyController.getMySections);
+router.get("/all-sections", facultyController.getAllSections);
 
 module.exports = router;
