@@ -7,15 +7,14 @@ const {
 
 const getDashboard = async (req, res) => {
   try {
-    const { findUserById: getUserById } = require("../models/queries");
-    const user = await getUserById(req.user.id);
+    const user = await findUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
     const [notices, allClasses] = await Promise.all([
-      getStudentNotices(user.class_id),
+      getStudentNotices(req.user.id),
       getAllClasses(),
     ]);
 
@@ -40,14 +39,13 @@ const getDashboard = async (req, res) => {
 
 const getNotices = async (req, res) => {
   try {
-    const { findUserById: getUserById } = require("../models/queries");
-    const user = await getUserById(req.user.id);
+    const user = await findUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const notices = await getStudentNotices(user.class_id);
+    const notices = await getStudentNotices(req.user.id);
     res.json({ notices });
   } catch (error) {
     console.error("Get student notices error:", error);
@@ -59,8 +57,7 @@ const getNoticeById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { findUserById: getUserById } = require("../models/queries");
-    const user = await getUserById(req.user.id);
+    const user = await findUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -90,8 +87,7 @@ const getNoticeById = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const { findUserById: getUserById } = require("../models/queries");
-    const user = await getUserById(req.user.id);
+    const user = await findUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -152,7 +148,7 @@ const getDepartments = async (req, res) => {
     const classes = await getAllClasses();
     res.json({ classes });
   } catch (error) {
-    console.error("平原classes error:", error);
+    console.error("Get classes error:", error);
     res.status(500).json({ error: error.message });
   }
 };

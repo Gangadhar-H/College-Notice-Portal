@@ -13,6 +13,7 @@ router.put("/notices/:id", facultyController.updateNotice);
 router.delete("/notices/:id", facultyController.deleteNotice);
 router.get("/students", facultyController.getStudents);
 router.get("/departments", facultyController.getAllClasses);
-router.get("/classes", facultyController.getMyClasses); // Changed from /departments
+router.get("/classes", facultyController.getMyClasses);
+router.get("/sections", facultyController.getMySections); // NEW
 
 module.exports = router;

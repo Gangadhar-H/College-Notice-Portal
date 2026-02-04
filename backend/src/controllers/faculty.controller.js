@@ -41,17 +41,37 @@ const getNotices = async (req, res) => {
 
 const createNoticeController = async (req, res) => {
   try {
-    const { title, message, notice_type, class_id } = req.body;
+    const { title, message, notice_type, recipients } = req.body;
 
-    // Validate that faculty can only send notices to their assigned classes
-    if (notice_type === "CLASS") {
-      const facultyClasses = await getFacultyClasses(req.user.id);
-      const hasAccess = facultyClasses.some((cls) => cls.id === class_id);
+    // Validate that faculty can only send notices to their assigned classes/sections
+    if (notice_type === "CLASS" || notice_type === "SECTION") {
+      const [facultyClasses, facultySections] = await Promise.all([
+        getFacultyClasses(req.user.id),
+        require("../models/queries").getFacultySections(req.user.id),
+      ]);
 
-      if (!hasAccess) {
-        return res.status(403).json({
-          error: "You can only send notices to your assigned classes",
-        });
+      const facultyClassIds = facultyClasses.map((c) => c.id);
+      const facultySectionIds = facultySections.map((s) => s.id);
+
+      // Parse recipients
+      const recipientsList =
+        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
+
+      // Validate access to all recipients
+      for (const recipient of recipientsList) {
+        if (recipient.section_id) {
+          if (!facultySectionIds.includes(recipient.section_id)) {
+            return res.status(403).json({
+              error: "You can only send notices to your assigned sections",
+            });
+          }
+        } else if (recipient.class_id) {
+          if (!facultyClassIds.includes(recipient.class_id)) {
+            return res.status(403).json({
+              error: "You can only send notices to your assigned classes",
+            });
+          }
+        }
       }
     }
 
@@ -59,13 +79,34 @@ const createNoticeController = async (req, res) => {
       title,
       message,
       notice_type,
-      class_id: notice_type === "CLASS" ? class_id : null,
       sent_by: req.user.id,
     });
 
+    // Add recipients if notice type is CLASS or SECTION
+    if (
+      (notice_type === "CLASS" || notice_type === "SECTION") &&
+      recipients &&
+      recipients.length > 0
+    ) {
+      const recipientsList =
+        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
+
+      const { addNoticeRecipient } = require("../models/queries");
+      for (const recipient of recipientsList) {
+        await addNoticeRecipient(notice.id, {
+          class_id: recipient.class_id || null,
+          section_id: recipient.section_id || null,
+        });
+      }
+    }
+
+    // Get the complete notice with recipients
+    const { getNoticeById } = require("../models/queries");
+    const completeNotice = await getNoticeById(notice.id);
+
     res.status(201).json({
       message: "Notice created successfully",
-      notice,
+      notice: completeNotice,
     });
   } catch (error) {
     console.error("Create faculty notice error:", error);
@@ -76,7 +117,7 @@ const createNoticeController = async (req, res) => {
 const updateNoticeController = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, message, notice_type, class_id } = req.body;
+    const { title, message, notice_type, recipients } = req.body;
 
     // First check if the notice exists and was created by this faculty
     const { getNoticeById } = require("../models/queries");
@@ -92,15 +133,33 @@ const updateNoticeController = async (req, res) => {
         .json({ error: "You can only update your own notices" });
     }
 
-    // Validate class access for CLASS notices
-    if (notice_type === "CLASS") {
-      const facultyClasses = await getFacultyClasses(req.user.id);
-      const hasAccess = facultyClasses.some((cls) => cls.id === class_id);
+    // Validate class/section access for CLASS and SECTION notices
+    if (notice_type === "CLASS" || notice_type === "SECTION") {
+      const [facultyClasses, facultySections] = await Promise.all([
+        getFacultyClasses(req.user.id),
+        require("../models/queries").getFacultySections(req.user.id),
+      ]);
 
-      if (!hasAccess) {
-        return res.status(403).json({
-          error: "You can only send notices to your assigned classes",
-        });
+      const facultyClassIds = facultyClasses.map((c) => c.id);
+      const facultySectionIds = facultySections.map((s) => s.id);
+
+      const recipientsList =
+        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
+
+      for (const recipient of recipientsList) {
+        if (recipient.section_id) {
+          if (!facultySectionIds.includes(recipient.section_id)) {
+            return res.status(403).json({
+              error: "You can only send notices to your assigned sections",
+            });
+          }
+        } else if (recipient.class_id) {
+          if (!facultyClassIds.includes(recipient.class_id)) {
+            return res.status(403).json({
+              error: "You can only send notices to your assigned classes",
+            });
+          }
+        }
       }
     }
 
@@ -108,12 +167,37 @@ const updateNoticeController = async (req, res) => {
       title,
       message,
       notice_type,
-      class_id: notice_type === "CLASS" ? class_id : null,
     });
+
+    // Update recipients
+    const {
+      deleteNoticeRecipients,
+      addNoticeRecipient,
+    } = require("../models/queries");
+    await deleteNoticeRecipients(id);
+
+    if (
+      (notice_type === "CLASS" || notice_type === "SECTION") &&
+      recipients &&
+      recipients.length > 0
+    ) {
+      const recipientsList =
+        typeof recipients === "string" ? JSON.parse(recipients) : recipients;
+
+      for (const recipient of recipientsList) {
+        await addNoticeRecipient(id, {
+          class_id: recipient.class_id || null,
+          section_id: recipient.section_id || null,
+        });
+      }
+    }
+
+    // Get the complete notice with recipients
+    const completeNotice = await getNoticeById(id);
 
     res.json({
       message: "Notice updated successfully",
-      notice,
+      notice: completeNotice,
     });
   } catch (error) {
     console.error("Update faculty notice error:", error);
@@ -200,6 +284,30 @@ const getAllClassesController = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const getMySections = async (req, res) => {
+  try {
+    const {
+      getFacultyClasses,
+      getSectionsByClass,
+    } = require("../models/queries");
+
+    // Get faculty's classes
+    const facultyClasses = await getFacultyClasses(req.user.id);
+    const classIds = facultyClasses.map((c) => c.id);
+
+    // Get all sections for faculty's classes
+    let allSections = [];
+    for (const classId of classIds) {
+      const sections = await getSectionsByClass(classId);
+      allSections = allSections.concat(sections);
+    }
+
+    res.json({ sections: allSections });
+  } catch (error) {
+    console.error("Get faculty sections error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 module.exports = {
   getDashboard,
@@ -210,4 +318,5 @@ module.exports = {
   getStudents,
   getMyClasses,
   getAllClasses: getAllClassesController,
+  getMySections, // ADD THIS LINE
 };

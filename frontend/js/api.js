@@ -242,6 +242,7 @@ const API = {
   },
 
   // ==================== FACULTY APIs ====================
+  // ==================== FACULTY APIs ====================
   async getFacultyDashboard() {
     return this.get(API_CONFIG.ENDPOINTS.FACULTY_DASHBOARD);
   },
@@ -271,6 +272,10 @@ const API = {
 
   async getFacultyDepartments() {
     return this.get("/faculty/classes");
+  },
+
+  async getFacultySections() {
+    return this.get("/faculty/sections"); // ADD THIS LINE
   },
 
   // ==================== STUDENT APIs ====================

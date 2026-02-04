@@ -13,6 +13,21 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="../../css/style.css" />
+    <style>
+      .recipient-item {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 5px;
+        background: #e7f3ff;
+        border-radius: 15px;
+        border: 1px solid #0d6efd;
+      }
+      .recipient-item .remove-recipient {
+        margin-left: 5px;
+        cursor: pointer;
+        color: #dc3545;
+      }
+    </style>
   </head>
   <body>
     <div id="navbar"></div>
@@ -45,7 +60,8 @@
               <option value="">All Types</option>
               <option value="ALL">All Users</option>
               <option value="FACULTY">Faculty Only</option>
-              <option value="CLASS">Class Specific</option>
+              <option value="CLASS">Class</option>
+              <option value="SECTION">Section</option>
             </select>
           </div>
         </div>
@@ -69,6 +85,7 @@
           <form id="noticeForm">
             <div class="modal-body">
               <input type="hidden" id="noticeId" />
+
               <div class="mb-3">
                 <label for="noticeTitle" class="form-label">Title</label>
                 <input
@@ -78,6 +95,7 @@
                   required
                 />
               </div>
+
               <div class="mb-3">
                 <label for="noticeMessage" class="form-label">Message</label>
                 <textarea
@@ -87,6 +105,7 @@
                   required
                 ></textarea>
               </div>
+
               <div class="mb-3">
                 <label for="noticeType" class="form-label">Notice Type</label>
                 <select
@@ -98,16 +117,65 @@
                   <option value="">Select Type</option>
                   <option value="ALL">All Users</option>
                   <option value="FACULTY">Faculty Only</option>
-                  <option value="CLASS">Class Specific</option>
+                  <option value="CLASS">Class (All Sections)</option>
+                  <option value="SECTION">Specific Sections</option>
                 </select>
               </div>
-              <div class="mb-3" id="classField" style="display: none">
-                <label for="noticeClass" class="form-label">Class</label>
-                <select class="form-select" id="noticeClass">
-                  <option value="">Select Class</option>
-                </select>
+
+              <!-- Recipients Section -->
+              <div id="recipientsSection" style="display: none">
+                <div class="mb-3">
+                  <label class="form-label">Select Recipients</label>
+
+                  <!-- For CLASS type -->
+                  <div id="classSelection" style="display: none">
+                    <div class="mb-2">
+                      <select class="form-select" id="classSelector">
+                        <option value="">Choose classes...</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary"
+                      onclick="addClassRecipient()"
+                    >
+                      <i class="fas fa-plus"></i> Add Class
+                    </button>
+                  </div>
+
+                  <!-- For SECTION type -->
+                  <div id="sectionSelection" style="display: none">
+                    <div class="row mb-2">
+                      <div class="col-md-6">
+                        <select class="form-select" id="sectionClassSelector">
+                          <option value="">First, select a class...</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <select
+                          class="form-select"
+                          id="sectionSelector"
+                          disabled
+                        >
+                          <option value="">Then, select a section...</option>
+                        </select>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary"
+                      onclick="addSectionRecipient()"
+                    >
+                      <i class="fas fa-plus"></i> Add Section
+                    </button>
+                  </div>
+
+                  <!-- Selected Recipients Display -->
+                  <div id="selectedRecipients" class="mt-3"></div>
+                </div>
               </div>
             </div>
+
             <div class="modal-footer">
               <button
                 type="button"
@@ -138,7 +206,9 @@
 
       let allNotices = [];
       let myClasses = [];
+      let allSections = [];
       let editingNoticeId = null;
+      let selectedRecipients = [];
 
       async function loadNotices() {
         try {
@@ -152,17 +222,38 @@
 
       async function loadMyClasses() {
         try {
-          const data = await API.getFacultyDepartments(); // Keep using this method
-          myClasses = data.classes;
+          const [classesData, sectionsData] = await Promise.all([
+            API.getFacultyDepartments(),
+            API.getFacultySections(),
+          ]);
 
-          const select = document.getElementById("noticeClass");
-          select.innerHTML = '<option value="">Select Class</option>';
-          myClasses.forEach((cls) => {
-            select.innerHTML += `<option value="${cls.id}">${cls.name}</option>`;
-          });
+          myClasses = classesData.classes;
+          allSections = sectionsData.sections;
+
+          console.log("My Classes:", myClasses);
+          console.log("All Sections:", allSections);
+
+          populateSelectors();
         } catch (error) {
           console.error("Failed to load classes:", error);
+          Utils.showToast("Failed to load classes and sections", "danger");
         }
+      }
+
+      function populateSelectors() {
+        const classSelector = document.getElementById("classSelector");
+        const sectionClassSelector = document.getElementById(
+          "sectionClassSelector"
+        );
+
+        const classOptions = myClasses
+          .map((cls) => `<option value="${cls.id}">${cls.name}</option>`)
+          .join("");
+
+        classSelector.innerHTML =
+          '<option value="">Choose classes...</option>' + classOptions;
+        sectionClassSelector.innerHTML =
+          '<option value="">First, select a class...</option>' + classOptions;
       }
 
       function displayNotices(notices) {
@@ -176,81 +267,261 @@
         const currentUser = Auth.getUser();
 
         container.innerHTML = notices
-          .map(
-            (notice) => `
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <div>
-              <h5 class="mb-1">${Utils.escapeHtml(notice.title)}</h5>
-              <small class="text-muted">
-                <i class="fas fa-user"></i> ${Utils.escapeHtml(
-                  notice.sender_name
-                )}
-              </small>
-            </div>
-            <div>
-              <span class="badge ${Utils.getNoticeTypeBadgeClass(
-                notice.notice_type
-              )}">
-                ${notice.notice_type}
-              </span>
-              ${
-                notice.class_name
-                  ? `<span class="badge bg-secondary ms-2">${Utils.escapeHtml(
-                      notice.class_name
-                    )}</span>`
-                  : ""
-              }
-            </div>
-          </div>
-          <div class="card-body">
-            <p class="card-text">${Utils.escapeHtml(notice.message)}</p>
-            <div class="d-flex justify-content-between align-items-center">
-              <small class="text-muted">
-                <i class="fas fa-calendar"></i> ${Utils.formatDate(
-                  notice.created_at
-                )}
-              </small>
-              ${
-                notice.sent_by === currentUser.id
-                  ? `
-                <div>
-                  <button class="btn btn-sm btn-warning" onclick="editNotice('${notice.id}')">
-                    <i class="fas fa-edit"></i> Edit
-                  </button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteNotice('${notice.id}')">
-                    <i class="fas fa-trash"></i> Delete
-                  </button>
+          .map((notice) => {
+            const recipientsHTML = getRecipientsHTML(notice);
+
+            return `
+              <div class="card mb-3 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 class="mb-1">${Utils.escapeHtml(notice.title)}</h5>
+                    <small class="text-muted">
+                      <i class="fas fa-user"></i> ${Utils.escapeHtml(
+                        notice.sender_name
+                      )}
+                    </small>
+                  </div>
+                  <div>
+                    <span class="badge ${getNoticeTypeBadge(
+                      notice.notice_type
+                    )}">
+                      ${getNoticeTypeLabel(notice.notice_type)}
+                    </span>
+                  </div>
                 </div>
-              `
-                  : ""
-              }
-            </div>
-          </div>
-        </div>
-      `
-          )
+                <div class="card-body">
+                  <p class="card-text">${Utils.escapeHtml(notice.message)}</p>
+                  ${recipientsHTML}
+                  <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                      <i class="fas fa-calendar"></i> ${Utils.formatDate(
+                        notice.created_at
+                      )}
+                    </small>
+                    ${
+                      notice.sent_by === currentUser.id
+                        ? `
+                      <div>
+                        <button class="btn btn-sm btn-warning" onclick="editNotice('${notice.id}')">
+                          <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteNotice('${notice.id}')">
+                          <i class="fas fa-trash"></i> Delete
+                        </button>
+                      </div>
+                    `
+                        : ""
+                    }
+                  </div>
+                </div>
+              </div>
+            `;
+          })
           .join("");
+      }
+
+      function getRecipientsHTML(notice) {
+        if (
+          notice.notice_type === "ALL" ||
+          notice.notice_type === "FACULTY" ||
+          !notice.recipients ||
+          notice.recipients.length === 0
+        ) {
+          return "";
+        }
+
+        const recipients = notice.recipients
+          .map((r) => {
+            if (r.section_id) {
+              return `<span class="badge bg-info">${Utils.escapeHtml(
+                r.class_name
+              )} - ${Utils.escapeHtml(
+                r.section_display_name || "Section " + r.section_name
+              )}</span>`;
+            } else {
+              return `<span class="badge bg-primary">${Utils.escapeHtml(
+                r.class_name
+              )} (All Sections)</span>`;
+            }
+          })
+          .join(" ");
+
+        return `
+          <div class="mb-2">
+            <strong>Recipients:</strong><br>
+            ${recipients}
+          </div>
+        `;
+      }
+
+      function getNoticeTypeBadge(type) {
+        const badges = {
+          ALL: "bg-info",
+          FACULTY: "bg-warning",
+          CLASS: "bg-primary",
+          SECTION: "bg-success",
+        };
+        return badges[type] || "bg-secondary";
+      }
+
+      function getNoticeTypeLabel(type) {
+        const labels = {
+          ALL: "All Users",
+          FACULTY: "Faculty Only",
+          CLASS: "Class/Year",
+          SECTION: "Sections",
+        };
+        return labels[type] || type;
       }
 
       function handleTypeChange() {
         const type = document.getElementById("noticeType").value;
-        const classField = document.getElementById("classField");
+        const recipientsSection = document.getElementById("recipientsSection");
+        const classSelection = document.getElementById("classSelection");
+        const sectionSelection = document.getElementById("sectionSelection");
+
+        selectedRecipients = [];
+        updateRecipientsDisplay();
 
         if (type === "CLASS") {
-          classField.style.display = "block";
-          document.getElementById("noticeClass").required = true;
+          recipientsSection.style.display = "block";
+          classSelection.style.display = "block";
+          sectionSelection.style.display = "none";
+        } else if (type === "SECTION") {
+          recipientsSection.style.display = "block";
+          classSelection.style.display = "none";
+          sectionSelection.style.display = "block";
         } else {
-          classField.style.display = "none";
-          document.getElementById("noticeClass").required = false;
+          recipientsSection.style.display = "none";
+          classSelection.style.display = "none";
+          sectionSelection.style.display = "none";
         }
       }
 
+      document
+        .getElementById("sectionClassSelector")
+        .addEventListener("change", (e) => {
+          const classId = e.target.value;
+          const sectionSelector = document.getElementById("sectionSelector");
+
+          if (classId) {
+            // Filter sections that belong to the selected class
+            const sections = allSections.filter((s) => s.class_id === classId);
+
+            if (sections.length === 0) {
+              sectionSelector.disabled = true;
+              sectionSelector.innerHTML =
+                '<option value="">No sections available for this class</option>';
+            } else {
+              sectionSelector.disabled = false;
+              sectionSelector.innerHTML =
+                '<option value="">Then, select a section...</option>' +
+                sections
+                  .map(
+                    (s) =>
+                      `<option value="${s.id}">${
+                        s.display_name || "Section " + s.name
+                      }</option>`
+                  )
+                  .join("");
+            }
+          } else {
+            sectionSelector.disabled = true;
+            sectionSelector.innerHTML =
+              '<option value="">Then, select a section...</option>';
+          }
+        });
+
+      window.addClassRecipient = function () {
+        const classId = document.getElementById("classSelector").value;
+        if (!classId) {
+          Utils.showToast("Please select a class", "warning");
+          return;
+        }
+
+        if (
+          selectedRecipients.some(
+            (r) => r.class_id === classId && !r.section_id
+          )
+        ) {
+          Utils.showToast("This class is already added", "warning");
+          return;
+        }
+
+        const className = myClasses.find((c) => c.id === classId).name;
+        selectedRecipients.push({ class_id: classId, class_name: className });
+        updateRecipientsDisplay();
+        document.getElementById("classSelector").value = "";
+      };
+
+      window.addSectionRecipient = function () {
+        const sectionId = document.getElementById("sectionSelector").value;
+        if (!sectionId) {
+          Utils.showToast("Please select a section", "warning");
+          return;
+        }
+
+        if (selectedRecipients.some((r) => r.section_id === sectionId)) {
+          Utils.showToast("This section is already added", "warning");
+          return;
+        }
+
+        const section = allSections.find((s) => s.id === sectionId);
+        const className = myClasses.find((c) => c.id === section.class_id).name;
+
+        selectedRecipients.push({
+          section_id: sectionId,
+          class_id: section.class_id,
+          class_name: className,
+          section_name: section.name,
+          section_display_name: section.display_name,
+        });
+
+        updateRecipientsDisplay();
+        document.getElementById("sectionClassSelector").value = "";
+        document.getElementById("sectionSelector").value = "";
+        document.getElementById("sectionSelector").disabled = true;
+      };
+
+      function updateRecipientsDisplay() {
+        const container = document.getElementById("selectedRecipients");
+
+        if (selectedRecipients.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted">No recipients selected yet</p>';
+          return;
+        }
+
+        container.innerHTML = selectedRecipients
+          .map(
+            (r, index) => `
+          <span class="recipient-item">
+            ${
+              r.section_id
+                ? `${r.class_name} - ${
+                    r.section_display_name || "Section " + r.section_name
+                  }`
+                : `${r.class_name} (All Sections)`
+            }
+            <i class="fas fa-times remove-recipient" onclick="removeRecipient(${index})"></i>
+          </span>
+        `
+          )
+          .join("");
+      }
+
+      window.removeRecipient = function (index) {
+        selectedRecipients.splice(index, 1);
+        updateRecipientsDisplay();
+      };
+
       function openCreateModal() {
         editingNoticeId = null;
+        selectedRecipients = [];
         document.getElementById("modalTitle").textContent = "Create Notice";
         document.getElementById("noticeForm").reset();
-        document.getElementById("classField").style.display = "none";
+        document.getElementById("recipientsSection").style.display = "none";
+        updateRecipientsDisplay();
       }
 
       async function editNotice(noticeId) {
@@ -265,10 +536,9 @@
         document.getElementById("noticeMessage").value = notice.message;
         document.getElementById("noticeType").value = notice.notice_type;
 
-        if (notice.notice_type === "CLASS") {
-          document.getElementById("classField").style.display = "block";
-          document.getElementById("noticeClass").value = notice.class_id || "";
-        }
+        selectedRecipients = notice.recipients || [];
+        handleTypeChange();
+        updateRecipientsDisplay();
 
         new bootstrap.Modal(document.getElementById("noticeModal")).show();
       }
@@ -296,12 +566,22 @@
           const title = document.getElementById("noticeTitle").value;
           const message = document.getElementById("noticeMessage").value;
           const notice_type = document.getElementById("noticeType").value;
-          const class_id =
-            notice_type === "CLASS"
-              ? document.getElementById("noticeClass").value
-              : null;
 
-          const noticeData = { title, message, notice_type, class_id };
+          // Validate recipients for CLASS and SECTION types
+          if (
+            (notice_type === "CLASS" || notice_type === "SECTION") &&
+            selectedRecipients.length === 0
+          ) {
+            Utils.showToast("Please select at least one recipient", "warning");
+            return;
+          }
+
+          const noticeData = {
+            title,
+            message,
+            notice_type,
+            recipients: selectedRecipients,
+          };
 
           try {
             if (editingNoticeId) {

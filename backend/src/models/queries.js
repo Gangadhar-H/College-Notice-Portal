@@ -320,7 +320,7 @@ module.exports = {
   // ==================== STUDENT NOTICES ====================
   async getStudentNotices(userId) {
     // Get user's class and section
-    const user = await this.findUserById(userId);
+    const user = await module.exports.findUserById(userId);
     if (!user) return [];
 
     const notices = await query(
@@ -350,42 +350,42 @@ module.exports = {
   },
 
   // ==================== FACULTY NOTICES ====================
+  // ==================== FACULTY NOTICES ====================
   async getFacultyNotices(faculty_id) {
     // Get faculty's classes and sections
-    const facultyClasses = await this.getFacultyClasses(faculty_id);
-    const facultySections = await this.getFacultySections(faculty_id);
+    const facultyClasses = await module.exports.getFacultyClasses(faculty_id);
+    const facultySections = await module.exports.getFacultySections(faculty_id);
 
     const classIds = facultyClasses.map((c) => c.id);
     const sectionIds = facultySections.map((s) => s.id);
 
     let query_text = `
-      SELECT DISTINCT n.*, u.name as sender_name, u.role as sender_role
-      FROM notices n 
-      JOIN users u ON n.sent_by = u.id 
-      WHERE n.notice_type = 'ALL' 
-         OR n.notice_type = 'FACULTY'
-    `;
+    SELECT DISTINCT n.*, u.name as sender_name, u.role as sender_role
+    FROM notices n 
+    JOIN users u ON n.sent_by = u.id 
+    WHERE n.notice_type = 'ALL' 
+       OR n.notice_type = 'FACULTY'
+  `;
 
-    const params = [faculty_id];
+    const params = [];
 
     if (classIds.length > 0) {
-      query_text += ` OR (n.notice_type = 'CLASS' AND n.id IN (
-        SELECT notice_id FROM notice_recipients WHERE class_id = ANY($2)
-      ))`;
       params.push(classIds);
+      query_text += ` OR (n.notice_type = 'CLASS' AND n.id IN (
+      SELECT notice_id FROM notice_recipients WHERE class_id = ANY($${params.length})
+    ))`;
     }
 
     if (sectionIds.length > 0) {
-      const sectionParamIndex = classIds.length > 0 ? 3 : 2;
-      query_text += ` OR (n.notice_type = 'SECTION' AND n.id IN (
-        SELECT notice_id FROM notice_recipients WHERE section_id = ANY($${sectionParamIndex})
-      ))`;
       params.push(sectionIds);
+      query_text += ` OR (n.notice_type = 'SECTION' AND n.id IN (
+      SELECT notice_id FROM notice_recipients WHERE section_id = ANY($${params.length})
+    ))`;
     }
 
     query_text += ` ORDER BY n.created_at DESC`;
 
-    const notices = await this.query(query_text, params);
+    const notices = await module.exports.query(query_text, params);
 
     // Get recipients and attachments for each notice
     for (let notice of notices) {
