@@ -29,6 +29,10 @@ const API_CONFIG = {
     STUDENT_PROFILE: "/student/profile",
     STUDENT_DEPARTMENTS: "/student/departments",
 
+    REPLIES: "/replies",
+    NOTICE_REPLIES: "/replies/notice",
+    MY_REPLIES: "/replies/my-replies",
+
     // Health
     HEALTH: "/health",
   },

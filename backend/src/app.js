@@ -11,6 +11,7 @@ const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
 const facultyRoutes = require("./routes/faculty.routes");
 const studentRoutes = require("./routes/student.routes");
+const replyRoutes = require("./routes/reply.routes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 const app = express();
@@ -71,6 +72,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/replies", replyRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

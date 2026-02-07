@@ -366,4 +366,29 @@ const API = {
   async getStudentDepartments() {
     return this.get(API_CONFIG.ENDPOINTS.STUDENT_DEPARTMENTS);
   },
+
+  // ==================== REPLY APIs ====================
+  async createReply(replyData) {
+    return this.post("/replies", replyData);
+  },
+
+  async getNoticeReplies(noticeId) {
+    return this.get(`/replies/notice/${noticeId}`);
+  },
+
+  async getUserReplies() {
+    return this.get("/replies/my-replies");
+  },
+
+  async updateReply(replyId, message) {
+    return this.put(`/replies/${replyId}`, { message });
+  },
+
+  async deleteReply(replyId) {
+    return this.delete(`/replies/${replyId}`);
+  },
+
+  async markReplyAsRead(replyId) {
+    return this.post(`/replies/${replyId}/mark-read`, {});
+  },
 };

@@ -448,4 +448,211 @@ module.exports = {
       [class_id]
     );
   },
+
+  // Add these functions to backend/src/models/queries.js
+  // Place them after the existing notice queries
+
+  // ==================== NOTICE REPLIES QUERIES ====================
+
+  async createReply(replyData) {
+    const { notice_id, sender_id, message, reply_type, parent_reply_id } =
+      replyData;
+    const result = await query(
+      // CHANGED: removed 'this.'
+      `INSERT INTO notice_replies (notice_id, sender_id, message, reply_type, parent_reply_id) 
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [notice_id, sender_id, message, reply_type, parent_reply_id || null]
+    );
+    return result[0];
+  },
+
+  async addReplyRecipient(reply_id, user_id) {
+    const result = await query(
+      // CHANGED: removed 'this.'
+      `INSERT INTO notice_reply_recipients (reply_id, user_id) 
+     VALUES ($1, $2) 
+     ON CONFLICT (reply_id, user_id) DO NOTHING 
+     RETURNING *`,
+      [reply_id, user_id]
+    );
+    return result[0];
+  },
+
+  async getNoticeReplies(notice_id, user_id) {
+    // ADDED: user_id parameter
+    // First get the notice to check who sent it
+    const noticeResult = await query(
+      `SELECT sent_by FROM notices WHERE id = $1`,
+      [notice_id]
+    );
+
+    if (noticeResult.length === 0) return [];
+
+    const notice_sender_id = noticeResult[0].sent_by;
+
+    // Get replies where user has permission to view
+    const replies = await query(
+      `SELECT DISTINCT nr.*, u.name as sender_name, u.role as sender_role, u.email as sender_email
+     FROM notice_replies nr
+     JOIN users u ON nr.sender_id = u.id
+     LEFT JOIN notice_reply_recipients nrr ON nr.id = nrr.reply_id
+     WHERE nr.notice_id = $1
+     AND (
+       nr.sender_id = $2                    -- User sent the reply
+       OR $2 = $3                            -- User is the notice sender
+       OR nrr.user_id = $2                   -- User is in recipients (REPLY_ALL)
+     )
+     ORDER BY nr.created_at ASC`,
+      [notice_id, user_id, notice_sender_id]
+    );
+
+    // Get recipients for each reply
+    for (let reply of replies) {
+      reply.recipients = await module.exports.getReplyRecipients(reply.id);
+    }
+
+    return replies;
+  },
+
+  async getReplyById(reply_id) {
+    const replies = await query(
+      // CHANGED: removed 'this.'
+      `SELECT nr.*, u.name as sender_name, u.role as sender_role, u.email as sender_email,
+            n.title as notice_title, n.sent_by as notice_sender_id
+     FROM notice_replies nr
+     JOIN users u ON nr.sender_id = u.id
+     JOIN notices n ON nr.notice_id = n.id
+     WHERE nr.id = $1`,
+      [reply_id]
+    );
+
+    if (replies.length === 0) return null;
+
+    const reply = replies[0];
+    reply.recipients = await module.exports.getReplyRecipients(reply.id);
+    return reply;
+  },
+
+  async getReplyRecipients(reply_id) {
+    return await query(
+      // CHANGED: removed 'this.'
+      `SELECT nrr.*, u.name as user_name, u.email as user_email, u.role as user_role
+     FROM notice_reply_recipients nrr
+     JOIN users u ON nrr.user_id = u.id
+     WHERE nrr.reply_id = $1`,
+      [reply_id]
+    );
+  },
+
+  async getUserReplies(user_id) {
+    // Get replies sent by user or where user is a recipient
+    const replies = await query(
+      // CHANGED: removed 'this.'
+      `SELECT DISTINCT nr.*, u.name as sender_name, u.role as sender_role,
+            n.title as notice_title, n.id as notice_id
+     FROM notice_replies nr
+     JOIN users u ON nr.sender_id = u.id
+     JOIN notices n ON nr.notice_id = n.id
+     LEFT JOIN notice_reply_recipients nrr ON nr.id = nrr.reply_id
+     WHERE nr.sender_id = $1 OR nrr.user_id = $1
+     ORDER BY nr.created_at DESC`,
+      [user_id]
+    );
+
+    for (let reply of replies) {
+      reply.recipients = await module.exports.getReplyRecipients(reply.id);
+    }
+
+    return replies;
+  },
+
+  async deleteReply(reply_id) {
+    const result = await query(
+      // CHANGED: removed 'this.'
+      `DELETE FROM notice_replies WHERE id = $1 RETURNING *`,
+      [reply_id]
+    );
+    return result[0];
+  },
+
+  async updateReply(reply_id, message) {
+    const result = await query(
+      // CHANGED: removed 'this.'
+      `UPDATE notice_replies 
+     SET message = $1, updated_at = CURRENT_TIMESTAMP 
+     WHERE id = $2 RETURNING *`,
+      [message, reply_id]
+    );
+    return result[0];
+  },
+
+  async markReplyAsRead(reply_id, user_id) {
+    await query(
+      // CHANGED: removed 'this.'
+      `UPDATE notice_reply_recipients 
+     SET is_read = TRUE 
+     WHERE reply_id = $1 AND user_id = $2`,
+      [reply_id, user_id]
+    );
+  },
+
+  async getUnreadRepliesCount(user_id) {
+    const result = await query(
+      // CHANGED: removed 'this.'
+      `SELECT COUNT(*) as count 
+     FROM notice_reply_recipients 
+     WHERE user_id = $1 AND is_read = FALSE`,
+      [user_id]
+    );
+    return parseInt(result[0].count);
+  },
+
+  // Helper to get all recipients of a notice (for REPLY_ALL)
+  async getNoticeRecipientUserIds(notice_id) {
+    const notice = await module.exports.getNoticeById(notice_id);
+    if (!notice) return [];
+
+    const userIds = new Set();
+
+    // Add the notice sender
+    userIds.add(notice.sent_by);
+
+    if (notice.notice_type === "ALL") {
+      // Get all users
+      const allUsers = await module.exports.getAllUsers();
+      allUsers.forEach((user) => userIds.add(user.id));
+    } else if (notice.notice_type === "FACULTY") {
+      // Get all faculty
+      const allUsers = await module.exports.getAllUsers();
+      allUsers
+        .filter((u) => u.role === "faculty")
+        .forEach((user) => userIds.add(user.id));
+    } else if (notice.notice_type === "CLASS") {
+      // Get users from specified classes
+      for (let recipient of notice.recipients) {
+        if (recipient.class_id) {
+          const classUsers = await query(
+            // CHANGED: removed 'this.'
+            `SELECT id FROM users WHERE class_id = $1`,
+            [recipient.class_id]
+          );
+          classUsers.forEach((user) => userIds.add(user.id));
+        }
+      }
+    } else if (notice.notice_type === "SECTION") {
+      // Get users from specified sections
+      for (let recipient of notice.recipients) {
+        if (recipient.section_id) {
+          const sectionUsers = await query(
+            // CHANGED: removed 'this.'
+            `SELECT id FROM users WHERE section_id = $1`,
+            [recipient.section_id]
+          );
+          sectionUsers.forEach((user) => userIds.add(user.id));
+        }
+      }
+    }
+
+    return Array.from(userIds);
+  },
 };
